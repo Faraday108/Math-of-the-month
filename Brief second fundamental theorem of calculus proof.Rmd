@@ -1,0 +1,36 @@
+---
+title: "Brief second fundamental theorem of calculus extension"
+author: "Nathan Young"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+## Second fundamental theorem of calculus  
+
+The second fundamental theorem of calculus, really an extension of the fundamental theorem where you let a bound be equal to $x$, says that if you differentiate the accumulation function, you get back to the original function. 
+
+$$
+\frac{d}{dx}\left[\int_a^x f(t)dt\right]=f(x)
+$$
+
+This can be extended to any general function as the bounds of integration. The only caveat is that if we have a general function $u$ as the bound then we need to incorporate the chain rule. 
+
+$$
+\frac{d}{dx}\left[\int_a^u f(t)dt\right]=f(u) \frac{du}{dx}
+$$
+
+## Example  
+
+Find the derivative of $\displaystyle \int_{\pi/2}^{x^3} \cos(t) dt$
+
+$$
+\begin{aligned}
+F(x) &= \int_{\pi/2}^{x^3} \cos(t) dt \\
+F'(x) &= \frac{dF}{du} \frac{du}{dx} \\
+  &= \frac{d}{du}[F(x)] \frac{du}{dx} \\
+  &= \frac{d}{du} \left[\int_{\pi/2}^{x^3} \cos(t) dt \right] \frac{du}{dx} \\
+  &= \frac{d}{du} \left[\int_{\pi/2}^u \cos(t)dt \right] \frac{du}{dx} \\
+  &= (\cos(u))(3x^2) \\
+  &= 3x^2 \cos(x^3) \\
+\end{aligned}
+$$
