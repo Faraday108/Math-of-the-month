@@ -1,0 +1,27 @@
+---
+title: "Brief Chain Rule Proof"
+author: "Nathan Young"
+date: "`r Sys.Date()`"
+output: pdf_document
+
+---
+The following proof is adapted from our textbook "Calculus of a Single Variable" by Larson and Edwards 10th ed. 
+
+Let $h(x) = f(g(x))$, then using alternate form of the derivative, we want to show that for $x=c$ that $h'(c)=f'(g(c))g'(c)$.  
+Alternate form of derivative:  
+
+$$
+f'(c)=\lim_{x \to c} \frac{f(x)-f(c)}{x-c}
+$$
+
+This proof multiplies by an equivalent 1 to rewrite the derivative. The major assumption of this is that we assume $g(x) \ne g(c)$ for values of $x$ other than $c$. 
+
+$$
+\begin{aligned} 
+h'(c)  &= \lim_{x \to c} \frac{f(g(x)-f(g(c))}{x-c} \\
+ &= \lim_{x \to c} \frac{f(g(x)-f(g(c))}{x-c} \times \frac{g(x)-g(c)}{g(x)-g(c)} \\
+ &= \lim_{x \to c} \frac{f(g(x)-f(g(c))}{g(x)-g(c)} \times \frac{g(x)-g(c)}{x-c} \\ 
+ &= \left[\lim_{x \to c} \frac{f(g(x)-f(g(c))}{g(x)-g(c)}\right] \left[\lim_{x \to c} \frac{g(x)-g(c)}{x-c}\right] \\ 
+ &= f'(g(c))g'(c)
+\end{aligned}
+$$
