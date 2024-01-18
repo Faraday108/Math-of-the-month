@@ -1,3 +1,4 @@
-theme: jekyll-theme-merlot
+# remote_theme
+theme: just-the-docs
 title: Math of the Month homepage
 description: Bookmark this to keep an eye on my project updates!
