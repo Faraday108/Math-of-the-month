@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.353">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Fractals</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="IFS_Fractals_files/libs/clipboard/clipboard.min.js"></script>
+<script src="IFS_Fractals_files/libs/quarto-html/quarto.js"></script>
+<script src="IFS_Fractals_files/libs/quarto-html/popper.min.js"></script>
+<script src="IFS_Fractals_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="IFS_Fractals_files/libs/quarto-html/anchor.min.js"></script>
+<link href="IFS_Fractals_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="IFS_Fractals_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="IFS_Fractals_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="IFS_Fractals_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="IFS_Fractals_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Fractals</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+</header>
+
+<section id="barnsley-fern" class="level2">
+<h2 class="anchored" data-anchor-id="barnsley-fern">Barnsley Fern</h2>
+<p>From <a href="https://en.wikipedia.org/wiki/Barnsley_fern">Wikipedia</a>: The Barnsley fern is a fractal named after the British mathematician Michael Barnsley who first described it in his book <em>Fractals Everywhere</em>. The fern is a basic example of self-similar sets, a mathematical pattern that can be reproduced at any magnification and is also an example of an Iterated Function System.</p>
+<p>The fern uses four affine transformations, the formula for which is:</p>
+<p><span class="math display">\[
+f_w(x,y)=\left[\begin{array}{cc}
+  a &amp; b \\
+  c &amp; d
+\end{array}
+\right]
+\left[\begin{array}{c} x \\ y \end{array}\right]
++ \left[\begin{array}{c} e \\ f \end{array}\right]
+\]</span></p>
+<p>By varying the parameters <span class="math inline">\(a, b, c, d, e, f\)</span>, the shape of the fern can be modified along with a parameter <span class="math inline">\(p\)</span> that determines the probability of each transformation. For the fern here, the following parameters were used:</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="table table-sm table-striped small">
+<colgroup>
+<col style="width: 7%">
+<col style="width: 8%">
+<col style="width: 8%">
+<col style="width: 8%">
+<col style="width: 7%">
+<col style="width: 4%">
+<col style="width: 7%">
+<col style="width: 7%">
+<col style="width: 39%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">w</th>
+<th style="text-align: right;">a</th>
+<th style="text-align: right;">b</th>
+<th style="text-align: right;">c</th>
+<th style="text-align: right;">d</th>
+<th style="text-align: right;">e</th>
+<th style="text-align: right;">f</th>
+<th style="text-align: right;">p</th>
+<th style="text-align: left;">Portion</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">f<sub>1</sub></td>
+<td style="text-align: right;">0.00</td>
+<td style="text-align: right;">0.00</td>
+<td style="text-align: right;">0.00</td>
+<td style="text-align: right;">0.16</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.00</td>
+<td style="text-align: right;">0.01</td>
+<td style="text-align: left;">Stem</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">f<sub>2</sub></td>
+<td style="text-align: right;">0.85</td>
+<td style="text-align: right;">0.04</td>
+<td style="text-align: right;">-0.04</td>
+<td style="text-align: right;">0.85</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1.60</td>
+<td style="text-align: right;">0.85</td>
+<td style="text-align: left;">Smaller leaflets</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">f<sub>3</sub></td>
+<td style="text-align: right;">0.20</td>
+<td style="text-align: right;">-0.26</td>
+<td style="text-align: right;">0.23</td>
+<td style="text-align: right;">0.22</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1.60</td>
+<td style="text-align: right;">0.07</td>
+<td style="text-align: left;">Largest left-hand leaflet</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">f<sub>4</sub></td>
+<td style="text-align: right;">-0.15</td>
+<td style="text-align: right;">0.28</td>
+<td style="text-align: right;">0.26</td>
+<td style="text-align: right;">0.24</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.44</td>
+<td style="text-align: right;">0.07</td>
+<td style="text-align: left;">Largest right-hand leaflet</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>To plot 10,000 iterations were run and <code>ggplot2::geom_bin_2d</code> was used to bin the results and color the resulting simulation.</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Setup initial parameters</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>maxiter <span class="ot">&lt;-</span> <span class="dv">10000</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Create empty dataframe</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> <span class="fu">rep</span>(<span class="cn">NA</span>, maxiter), <span class="at">y =</span> <span class="fu">rep</span>(<span class="cn">NA</span>, maxiter))</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Run n times up to maxiter and probabilistically select which of the four affine transformations is applied. </span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="cf">while</span> (n <span class="sc">&lt;</span> maxiter) {</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  r <span class="ot">&lt;-</span> <span class="fu">runif</span>(<span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">1</span>)</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (r <span class="sc">&lt;</span> <span class="fl">0.01</span>) {</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    xn <span class="ot">&lt;-</span> <span class="fl">0.0</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    yn <span class="ot">&lt;-</span> <span class="fl">0.16</span> <span class="sc">*</span> y</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> <span class="cf">if</span> (r <span class="sc">&lt;</span> .<span class="dv">86</span>) {</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    xn <span class="ot">&lt;-</span> <span class="fl">0.85</span><span class="sc">*</span>x <span class="sc">+</span> <span class="fl">0.04</span><span class="sc">*</span>y</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>    yn <span class="ot">&lt;-</span> <span class="sc">-</span><span class="fl">0.04</span><span class="sc">*</span>x <span class="sc">+</span> <span class="fl">0.85</span><span class="sc">*</span>y <span class="sc">+</span> <span class="fl">1.6</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> <span class="cf">if</span> (r <span class="sc">&lt;</span> <span class="fl">0.93</span>) {</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>    xn <span class="ot">&lt;-</span> <span class="fl">0.2</span><span class="sc">*</span>x <span class="sc">-</span> <span class="fl">0.2</span><span class="sc">*</span>y</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>    yn <span class="ot">&lt;-</span> <span class="fl">0.23</span><span class="sc">*</span>x <span class="sc">+</span> <span class="fl">0.22</span><span class="sc">*</span>y <span class="sc">+</span> <span class="fl">1.6</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>    xn <span class="ot">&lt;-</span> <span class="sc">-</span><span class="fl">0.15</span><span class="sc">*</span>x <span class="sc">+</span> <span class="fl">0.28</span><span class="sc">*</span>y</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>    yn <span class="ot">&lt;-</span> <span class="fl">0.26</span><span class="sc">*</span>x <span class="sc">+</span> <span class="fl">0.24</span><span class="sc">*</span>y <span class="sc">+</span> <span class="fl">0.44</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>  x <span class="ot">&lt;-</span> xn</span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>  y <span class="ot">&lt;-</span> yn</span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>  data[n<span class="sc">+</span><span class="dv">1</span>,] <span class="ot">&lt;-</span> <span class="fu">c</span>(x,y)</span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>  n <span class="ot">&lt;-</span> n<span class="sc">+</span><span class="dv">1</span></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(data, <span class="fu">aes</span>(x, y)) <span class="sc">+</span> </span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>  <span class="co"># bind_2d allows coloring according to which points are more</span></span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>  <span class="co"># frequently visited. </span></span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_bin_2d</span>(<span class="at">bins =</span> <span class="dv">300</span>, </span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>              <span class="fu">aes</span>(<span class="at">fill =</span> <span class="fu">after_stat</span>(<span class="fu">log</span>(density))), </span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>              <span class="at">show.legend =</span> <span class="cn">FALSE</span>) <span class="sc">+</span> </span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_gradientn</span>(<span class="at">colors =</span> <span class="fu">c</span>(<span class="st">"green"</span>, <span class="st">"darkgreen"</span>)) <span class="sc">+</span> </span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a>  <span class="fu">lims</span>(<span class="at">x =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">3</span>,<span class="dv">3</span>), <span class="at">y =</span> <span class="fu">c</span>(<span class="sc">-</span>.<span class="dv">5</span>, <span class="dv">10</span>)) <span class="sc">+</span> </span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_equal</span>() <span class="sc">+</span> <span class="co"># 1:1 ratio</span></span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>() <span class="co"># no axis</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: Removed 10 rows containing missing values (`geom_tile()`).</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="IFS_Fractals_files/figure-html/barnsley_fern-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="binary-tree" class="level2">
+<h2 class="anchored" data-anchor-id="binary-tree">Binary Tree</h2>
+<p>An easy fractal to generate, the binary tree (or <a href="https://en.wikipedia.org/wiki/Fractal_canopy">fractal canopy</a>) is generated by: taking a line segment in as a matrix (first column x-coordinates, second y-coordinates), splits the end at plus and minus an angle, and grows a new branch r*length of the original branch.<br>
+I decided to explore this with both built in functionality and by creating a new class <code>BinaryBranch</code> and <code>BinaryTree</code> that keep information about the generation with the line segment as a new class. <code>BinaryTree</code> has an accompanying method to plot it.</p>
+<section id="testing-out-class-system" class="level4">
+<h4 class="anchored" data-anchor-id="testing-out-class-system">Testing out class system</h4>
+<p>I defined two new classes: <code>BinaryBranch</code> stores the coordinates of the branch, generation of the branch, and the size of the tree while <code>BinaryTree</code> stores the entire tree as a list of branches.</p>
+<p>I then defined a print method for the <code>BinaryTree</code> object that sets a color palette, finds the limits of the tree, creates a new plot, and plots the trunk and branches.</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create binarybranch class with slots coords for the point, generation for which generation the branch was generated from, and max_gen to keep information on how many branch generations there are. </span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">setClass</span>(<span class="st">"BinaryBranch"</span>, <span class="at">slots =</span> <span class="fu">list</span>(<span class="at">coords =</span> <span class="st">"matrix"</span>, <span class="at">generation =</span> <span class="st">"numeric"</span>, <span class="at">max_gen =</span> <span class="st">"numeric"</span>))</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co"># A class that is a list of branches. Custom method of plot is created for this class. </span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="fu">setClass</span>(<span class="st">"BinaryTree"</span>, <span class="at">slots =</span> <span class="fu">list</span>(<span class="at">branches =</span> <span class="st">"list"</span>))</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Custom print method for BinaryTree that plots each branch</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="fu">setMethod</span>(<span class="st">"plot"</span>, <span class="st">"BinaryTree"</span>, <span class="cf">function</span>(x) {</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  pal <span class="ot">&lt;-</span> <span class="fu">colorRampPalette</span>(<span class="at">colors =</span> <span class="fu">c</span>(<span class="st">"brown"</span>, <span class="st">"green"</span>))</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  clrs <span class="ot">&lt;-</span> <span class="fu">pal</span>(x<span class="sc">@</span>branches[[<span class="dv">1</span>]]<span class="sc">@</span>max_gen)</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>  xlim <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">0</span>)</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>  ylim <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">0</span>)</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(x<span class="sc">@</span>branches)) {</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    xmax <span class="ot">&lt;-</span> <span class="fu">max</span>(x<span class="sc">@</span>branches[[i]]<span class="sc">@</span>coords[,<span class="dv">1</span>])</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>    ymax <span class="ot">&lt;-</span> <span class="fu">max</span>(x<span class="sc">@</span>branches[[i]]<span class="sc">@</span>coords[,<span class="dv">2</span>])</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>    xmin <span class="ot">&lt;-</span> <span class="fu">min</span>(x<span class="sc">@</span>branches[[i]]<span class="sc">@</span>coords[,<span class="dv">1</span>])</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>    ymin <span class="ot">&lt;-</span> <span class="fu">min</span>(x<span class="sc">@</span>branches[[i]]<span class="sc">@</span>coords[,<span class="dv">2</span>])</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (xmax <span class="sc">&gt;</span> xlim[<span class="dv">2</span>]) {</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>      xlim[<span class="dv">2</span>] <span class="ot">&lt;-</span> xmax</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (ymax <span class="sc">&gt;</span> ylim[<span class="dv">2</span>]) {</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>      ylim[<span class="dv">2</span>] <span class="ot">&lt;-</span> ymax</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (xmin <span class="sc">&lt;</span> xlim[<span class="dv">1</span>]) {</span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>      xlim[<span class="dv">1</span>] <span class="ot">&lt;-</span> xmin</span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (ymin <span class="sc">&lt;</span> ylim[<span class="dv">1</span>]) {</span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>      ylim[<span class="dv">1</span>] <span class="ot">&lt;-</span> ymin</span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>  <span class="co"># No margins</span></span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>  <span class="fu">par</span>(<span class="at">mar =</span> <span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">0</span>))</span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Plot trunk</span></span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>  <span class="fu">plot</span>(x<span class="sc">@</span>branches[[<span class="dv">1</span>]]<span class="sc">@</span>coords, <span class="at">type =</span> <span class="st">"l"</span>, </span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>       <span class="at">xlim =</span> xlim, <span class="at">ylim =</span> ylim, </span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>       <span class="at">lwd =</span> <span class="dv">1</span> <span class="sc">+</span> x<span class="sc">@</span>branches[[<span class="dv">1</span>]]<span class="sc">@</span>max_gen, </span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>       <span class="at">lend =</span> <span class="dv">2</span>, </span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>       <span class="at">asp =</span> <span class="dv">1</span>, <span class="at">col =</span> clrs[<span class="dv">1</span>], </span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>       <span class="at">axes =</span> <span class="cn">FALSE</span>, <span class="at">ann =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">2</span><span class="sc">:</span><span class="fu">length</span>(x<span class="sc">@</span>branches)) {</span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a>    <span class="fu">lines</span>(x<span class="sc">@</span>branches[[i]]<span class="sc">@</span>coords, <span class="at">col =</span> clrs[x<span class="sc">@</span>branches[[i]]<span class="sc">@</span>generation], </span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a>          <span class="at">lwd =</span> x<span class="sc">@</span>branches[[i]]<span class="sc">@</span>max_gen <span class="sc">/</span> x<span class="sc">@</span>branches[[i]]<span class="sc">@</span>generation, </span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a>          <span class="at">lend =</span> <span class="dv">2</span>)</span>
+<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+</section>
+<section id="creating-a-tree-with-base-r" class="level4">
+<h4 class="anchored" data-anchor-id="creating-a-tree-with-base-r">Creating a tree with base R</h4>
+<p>In this section, I wanted to explore creating a tree with base R by creating a series of helper functions.</p>
+<p>First, the <code>branch</code> function takes a line segment, scale factor, and rotation amount and creates two new branches at plus and minus the rotation before outputting them as a list. Secondly, the <code>make_tree</code> function takes the trunk, number of generations, and same r and t and builds a tree with the specified number of generations from the trunk. This function also takes care of plotting the tree.</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Initial stem</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>s1 <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">1</span>), <span class="at">nrow =</span> <span class="dv">2</span>)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>r <span class="ot">&lt;-</span> .<span class="dv">9</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>t <span class="ot">&lt;-</span> pi<span class="sc">/</span><span class="dv">6</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="co"># create branch with parameters of m = matrix, r = length ratio for next branch, and t = rotation amount. </span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>branch <span class="ot">&lt;-</span> <span class="cf">function</span>(m, r, t) {</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  ipt0 <span class="ot">&lt;-</span> <span class="fu">t</span>(m[<span class="dv">1</span>,,<span class="at">drop =</span> <span class="cn">FALSE</span>])</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>  ept0 <span class="ot">&lt;-</span> <span class="fu">t</span>(m[<span class="dv">2</span>,,<span class="at">drop =</span> <span class="cn">FALSE</span>])</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>  rotpos <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="fu">cos</span>(t), <span class="fu">sin</span>(t), <span class="sc">-</span><span class="fu">sin</span>(t), <span class="fu">cos</span>(t)), <span class="at">nrow =</span> <span class="dv">2</span>, <span class="at">byrow =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>  rotneg <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="fu">cos</span>(<span class="sc">-</span>t), <span class="fu">sin</span>(<span class="sc">-</span>t), <span class="sc">-</span><span class="fu">sin</span>(<span class="sc">-</span>t), <span class="fu">cos</span>(<span class="sc">-</span>t)), <span class="at">nrow =</span> <span class="dv">2</span>, <span class="at">byrow =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>  eptpos <span class="ot">&lt;-</span> r<span class="sc">*</span>rotpos <span class="sc">%*%</span> (ept0 <span class="sc">-</span> ipt0) <span class="sc">+</span> ept0</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>  eptneg <span class="ot">&lt;-</span> r<span class="sc">*</span>rotneg <span class="sc">%*%</span> (ept0 <span class="sc">-</span> ipt0) <span class="sc">+</span> ept0</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>(<span class="fu">rbind</span>(<span class="fu">t</span>(ept0), <span class="fu">t</span>(eptpos)),<span class="fu">rbind</span>(<span class="fu">t</span>(ept0), <span class="fu">t</span>(eptneg)))</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a><span class="co"># helper to create tree with starting trunk, number of generations of branches, branch ratio, and rotation amount</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>make_tree <span class="ot">&lt;-</span> <span class="cf">function</span>(trunk, generations, r, t) {</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>  pal <span class="ot">&lt;-</span> <span class="fu">colorRampPalette</span>(<span class="at">colors =</span> <span class="fu">c</span>(<span class="st">"brown"</span>, <span class="st">"green"</span>))</span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>  clrs <span class="ot">&lt;-</span> <span class="fu">pal</span>(generations)</span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>  branch_test <span class="ot">&lt;-</span> <span class="fu">list</span>(trunk)</span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>  ys <span class="ot">&lt;-</span> <span class="fu">sum</span>(r<span class="sc">^</span><span class="fu">c</span>(<span class="dv">0</span><span class="sc">:</span>generations))</span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (t <span class="sc">&gt;</span> pi<span class="sc">/</span><span class="dv">2</span>) {</span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>    xlim <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">1.2</span>, <span class="fl">1.2</span>)</span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>    ylim <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="sc">-</span>.<span class="dv">5</span>, <span class="fl">1.2</span>)</span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>    xlim <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">4</span>, <span class="dv">4</span>)</span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>    ylim <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="sc">-</span>.<span class="dv">25</span><span class="sc">*</span>ys, ys)</span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a>  <span class="fu">plot</span>(trunk, <span class="at">type =</span> <span class="st">"l"</span>, <span class="at">xlim =</span> xlim, <span class="at">ylim =</span> ylim, </span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a>       <span class="at">asp =</span> <span class="dv">1</span>, <span class="at">col =</span> clrs[<span class="dv">1</span>], <span class="at">lwd =</span> <span class="dv">5</span>)</span>
+<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a>  n <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a>  k <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb4-36"><a href="#cb4-36" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (j <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>generations){</span>
+<span id="cb4-37"><a href="#cb4-37" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (i <span class="cf">in</span> k<span class="sc">:</span><span class="fu">length</span>(branch_test)) {</span>
+<span id="cb4-38"><a href="#cb4-38" aria-hidden="true" tabindex="-1"></a>      <span class="fu">invisible</span>(<span class="fu">lapply</span>(<span class="fu">branch</span>(branch_test[[i]], r, t), lines, </span>
+<span id="cb4-39"><a href="#cb4-39" aria-hidden="true" tabindex="-1"></a>                       <span class="at">col =</span> clrs[j], </span>
+<span id="cb4-40"><a href="#cb4-40" aria-hidden="true" tabindex="-1"></a>                       <span class="at">lwd =</span> <span class="dv">4</span><span class="sc">/</span>j))</span>
+<span id="cb4-41"><a href="#cb4-41" aria-hidden="true" tabindex="-1"></a>      branch_test <span class="ot">&lt;-</span> <span class="fu">c</span>(branch_test, <span class="fu">branch</span>(branch_test[[i]], r, t))</span>
+<span id="cb4-42"><a href="#cb4-42" aria-hidden="true" tabindex="-1"></a>      n <span class="ot">&lt;-</span> n <span class="sc">+</span> <span class="dv">1</span></span>
+<span id="cb4-43"><a href="#cb4-43" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb4-44"><a href="#cb4-44" aria-hidden="true" tabindex="-1"></a>    k <span class="ot">&lt;-</span> n</span>
+<span id="cb4-45"><a href="#cb4-45" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb4-46"><a href="#cb4-46" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb4-47"><a href="#cb4-47" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-48"><a href="#cb4-48" aria-hidden="true" tabindex="-1"></a><span class="fu">make_tree</span>(s1, <span class="dv">10</span>, .<span class="dv">8</span>, pi<span class="sc">/</span><span class="dv">4</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="IFS_Fractals_files/figure-html/unnamed-chunk-2-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="creating-a-tree-with-custom-class" class="level4">
+<h4 class="anchored" data-anchor-id="creating-a-tree-with-custom-class">Creating a tree with custom class</h4>
+<p>This starts off by creating a <code>BinaryBranch</code> from the same trunk. The <code>branch</code> function was rewritten as <code>branchS4</code> to accept an object of <code>BinaryBranch</code> with the same functionality but it outputs a list of two new <code>BinaryBranch</code> objects.<br>
+Next, the <code>make_treesS4</code> function was adapted from <code>make_tree</code> function to accept the list of <code>BinaryBranch</code>es and create the whole tree. The tree is returned with class <code>BinaryTree</code> which I created the custom plot method for earlier, allowing plot to be directly called on the output of <code>make_treeS4</code>.</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># convert trunk from base R version to the "BinaryBranch" class created above. </span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>s1S4 <span class="ot">&lt;-</span> <span class="fu">new</span>(<span class="st">"BinaryBranch"</span>, <span class="at">coords =</span> s1, <span class="at">generation =</span> <span class="dv">1</span>)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Edit of "branch" help function to accept "BinaryBranch" input</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>branchS4 <span class="ot">&lt;-</span> <span class="cf">function</span>(m, r, t, g, max_gen) {</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  ipt0 <span class="ot">&lt;-</span> <span class="fu">t</span>(m<span class="sc">@</span>coords[<span class="dv">1</span>,,<span class="at">drop =</span> <span class="cn">FALSE</span>])</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  ept0 <span class="ot">&lt;-</span> <span class="fu">t</span>(m<span class="sc">@</span>coords[<span class="dv">2</span>,,<span class="at">drop =</span> <span class="cn">FALSE</span>])</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  rotpos <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="fu">cos</span>(t), <span class="fu">sin</span>(t), <span class="sc">-</span><span class="fu">sin</span>(t), <span class="fu">cos</span>(t)), <span class="at">nrow =</span> <span class="dv">2</span>, <span class="at">byrow =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  rotneg <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="fu">cos</span>(<span class="sc">-</span>t), <span class="fu">sin</span>(<span class="sc">-</span>t), <span class="sc">-</span><span class="fu">sin</span>(<span class="sc">-</span>t), <span class="fu">cos</span>(<span class="sc">-</span>t)), <span class="at">nrow =</span> <span class="dv">2</span>, <span class="at">byrow =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>  eptpos <span class="ot">&lt;-</span> r<span class="sc">*</span>rotpos <span class="sc">%*%</span> (ept0 <span class="sc">-</span> ipt0) <span class="sc">+</span> ept0</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>  eptneg <span class="ot">&lt;-</span> r<span class="sc">*</span>rotneg <span class="sc">%*%</span> (ept0 <span class="sc">-</span> ipt0) <span class="sc">+</span> ept0</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>  lbranch <span class="ot">&lt;-</span> <span class="fu">new</span>(<span class="st">"BinaryBranch"</span>, <span class="at">coords =</span> <span class="fu">rbind</span>(<span class="fu">t</span>(ept0), <span class="fu">t</span>(eptneg)), <span class="at">generation =</span> g, <span class="at">max_gen =</span> max_gen)</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>  rbranch <span class="ot">&lt;-</span> <span class="fu">new</span>(<span class="st">"BinaryBranch"</span>, <span class="at">coords =</span> <span class="fu">rbind</span>(<span class="fu">t</span>(ept0), <span class="fu">t</span>(eptpos)), <span class="at">generation =</span> g, <span class="at">max_gen =</span> max_gen)</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>(lbranch, rbranch)</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Similar S4 class version of "make_tree" function that returns a tree of class "BinaryTree"</span></span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>make_treeS4 <span class="ot">&lt;-</span> <span class="cf">function</span>(trunk, generations, r, t) {</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>  pal <span class="ot">&lt;-</span> <span class="fu">colorRampPalette</span>(<span class="at">colors =</span> <span class="fu">c</span>(<span class="st">"brown"</span>, <span class="st">"green"</span>))</span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>  clrs <span class="ot">&lt;-</span> <span class="fu">pal</span>(generations)</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>  trunk<span class="sc">@</span>max_gen <span class="ot">&lt;-</span> generations<span class="sc">+</span><span class="dv">1</span></span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>  built_tree <span class="ot">&lt;-</span> <span class="fu">list</span>(trunk)</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>  ys <span class="ot">&lt;-</span> <span class="fu">sum</span>(r<span class="sc">^</span><span class="fu">c</span>(<span class="dv">0</span><span class="sc">:</span>generations))</span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>  n <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>  k <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (j <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>generations){</span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (i <span class="cf">in</span> k<span class="sc">:</span><span class="fu">length</span>(built_tree)) {</span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>      new_branch <span class="ot">&lt;-</span> <span class="fu">branchS4</span>(built_tree[[i]], r, t, j<span class="sc">+</span><span class="dv">1</span>, generations<span class="sc">+</span><span class="dv">1</span>)</span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>      built_tree <span class="ot">&lt;-</span> <span class="fu">c</span>(built_tree, new_branch)</span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a>      n <span class="ot">&lt;-</span> n <span class="sc">+</span> <span class="dv">1</span></span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a>    k <span class="ot">&lt;-</span> n</span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a>  <span class="fu">new</span>(<span class="st">"BinaryTree"</span>, <span class="at">branches =</span> built_tree)</span>
+<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a><span class="co"># Use custom plot function on a S4 BinaryTree</span></span>
+<span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(<span class="fu">make_treeS4</span>(s1S4, <span class="dv">12</span>, r, pi<span class="sc">/</span><span class="dv">12</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="IFS_Fractals_files/figure-html/unnamed-chunk-3-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+</section>
+<section id="levy-c-curve" class="level2">
+<h2 class="anchored" data-anchor-id="levy-c-curve">Levy C curve</h2>
+<p>The Levy C curve can be generated with an IFS as implemented here or with an L-system method that will be explored in a further set of fractal simulations. In this fractal, each line segment (pair of points) is iteratively replaced with a 45 degree turn left, then 90 right along with a scaling of <span class="math inline">\(1/\sqrt{2}\)</span></p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>x0 <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">1</span>)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>y0 <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">0</span>)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>iterations <span class="ot">&lt;-</span> <span class="dv">15</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>rot45 <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">/</span><span class="fu">sqrt</span>(<span class="dv">2</span>)<span class="sc">*</span><span class="fu">matrix</span>(<span class="fu">c</span>(<span class="fu">cos</span>(pi<span class="sc">/</span><span class="dv">4</span>), <span class="fu">sin</span>(pi<span class="sc">/</span><span class="dv">4</span>), <span class="sc">-</span><span class="fu">sin</span>(pi<span class="sc">/</span><span class="dv">4</span>), <span class="fu">cos</span>(pi<span class="sc">/</span><span class="dv">4</span>)), <span class="at">nrow =</span> <span class="dv">2</span>)</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (j <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>iterations) {</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (i <span class="cf">in</span> <span class="fu">length</span>(x0)<span class="sc">:</span><span class="dv">2</span>){</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    newpt <span class="ot">&lt;-</span> rot45 <span class="sc">%*%</span> <span class="fu">matrix</span>(<span class="fu">c</span>(x0[i] <span class="sc">-</span> x0[i<span class="dv">-1</span>], y0[i] <span class="sc">-</span> y0[i<span class="dv">-1</span>]), </span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>                              <span class="at">nrow =</span> <span class="dv">2</span>) <span class="sc">+</span> </span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>      <span class="fu">matrix</span>(<span class="fu">c</span>(x0[i<span class="dv">-1</span>],y0[i<span class="dv">-1</span>]), <span class="at">nrow =</span> <span class="dv">2</span>)</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>    x0 <span class="ot">&lt;-</span> <span class="fu">append</span>(x0, newpt[<span class="dv">1</span>,],<span class="at">after =</span> i<span class="dv">-1</span>)</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>    y0 <span class="ot">&lt;-</span> <span class="fu">append</span>(y0, newpt[<span class="dv">2</span>,],<span class="at">after =</span> i<span class="dv">-1</span>)</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(x0, y0, <span class="at">type =</span> <span class="st">"l"</span>, <span class="at">asp =</span> <span class="dv">1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="IFS_Fractals_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="l-system" class="level2">
+<h2 class="anchored" data-anchor-id="l-system">L-System</h2>
+<p>From <a href="https://en.wikipedia.org/wiki/L-system">Wikipedia</a>: an l-system consists of an alphabet of symbols that can be used to make strings, a set of production rules that expand each symbol into a larger string of symbols, an initial axiom string, and a mechanism for translating the strings into geometric structures. They describe the behavior of plant cells and model growth processes of plant development.<br>
+Here I’ve created a basic L-system process that takes a given curve that is a list of an axiom, rules, angle, generations, and initial angle and generates the whole string that is then plotted. The two here have four symbols: L, R, +, and -.</p>
+<ul>
+<li><strong>L</strong>: Go foward 1 unit</li>
+<li><strong>R</strong>: Go forward 1 unit</li>
+<li><strong>+</strong>: turn right by angle, don’t move from point</li>
+<li><strong>-</strong>: turn left by angle, don’t move from point</li>
+</ul>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(stringi)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(gsubfn)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stderr">
+<pre><code>Loading required package: proto</code></pre>
+</div>
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>curve1 <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">name =</span> <span class="st">"Koch Island"</span>, </span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>             <span class="at">axiom =</span> <span class="st">"F-F-F-F"</span>, </span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>             <span class="at">rules =</span> <span class="fu">list</span>(<span class="st">"F"</span> <span class="ot">=</span> <span class="st">"F-F+F+FF-F-F+F"</span>), </span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>             <span class="at">angle =</span> <span class="dv">90</span>, </span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>             <span class="at">n =</span> <span class="dv">4</span>, </span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>             <span class="at">alpha0 =</span> <span class="dv">90</span>)</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>curve2 <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">name =</span> <span class="st">"Sierpinsky Triangle"</span>, </span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>              <span class="at">axiom =</span> <span class="st">"R"</span>, </span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>              <span class="at">rules =</span> <span class="fu">list</span>(<span class="st">"L"</span> <span class="ot">=</span> <span class="st">"R+L+R"</span>, <span class="st">"R"</span> <span class="ot">=</span> <span class="st">"L-R-L"</span>), </span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>              <span class="at">angle =</span> <span class="dv">60</span>, </span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>              <span class="at">n =</span> <span class="dv">8</span>, </span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>              <span class="at">alpha0 =</span> <span class="dv">0</span>)</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>draw_l_curve <span class="ot">&lt;-</span> <span class="cf">function</span>(curve) {</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>  rules <span class="ot">&lt;-</span> curve<span class="sc">$</span>rules; alpha0 <span class="ot">&lt;-</span> curve<span class="sc">$</span>alpha0; iterations <span class="ot">&lt;-</span> curve<span class="sc">$</span>n</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>  axiom <span class="ot">&lt;-</span> curve<span class="sc">$</span>axiom</span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>iterations) axiom <span class="ot">&lt;-</span> <span class="fu">gsubfn</span>(<span class="st">"."</span>, <span class="at">replacement =</span> rules, axiom)</span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>  actions <span class="ot">&lt;-</span> <span class="fu">stri_extract_all</span>(axiom, <span class="at">regex =</span> <span class="st">"."</span>)[[<span class="dv">1</span>]]</span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>  points <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> <span class="dv">0</span>, <span class="at">y =</span> <span class="dv">0</span>, <span class="at">alpha =</span> alpha0)</span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(actions)) {</span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (actions[i] <span class="sc">==</span> <span class="st">"F"</span> <span class="sc">|</span> actions[i] <span class="sc">==</span> <span class="st">"L"</span> <span class="sc">|</span> actions[i] <span class="sc">==</span> <span class="st">"R"</span>) {</span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>      x <span class="ot">&lt;-</span> points[<span class="fu">nrow</span>(points), <span class="st">"x"</span>] <span class="sc">+</span> <span class="fu">cos</span>(points[<span class="fu">nrow</span>(points), <span class="st">"alpha"</span>]<span class="sc">*</span>(pi<span class="sc">/</span><span class="dv">180</span>))</span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a>      y <span class="ot">&lt;-</span> points[<span class="fu">nrow</span>(points), <span class="st">"y"</span>] <span class="sc">+</span> <span class="fu">sin</span>(points[<span class="fu">nrow</span>(points), <span class="st">"alpha"</span>]<span class="sc">*</span>(pi<span class="sc">/</span><span class="dv">180</span>))</span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a>      alpha <span class="ot">&lt;-</span> points[<span class="fu">nrow</span>(points), <span class="st">"alpha"</span>]</span>
+<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a>      points <span class="ot">&lt;-</span> <span class="fu">rbind</span>(points, <span class="fu">data.frame</span>(<span class="at">x=</span>x, <span class="at">y =</span> y, <span class="at">alpha =</span> alpha))</span>
+<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">else</span> {</span>
+<span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a>      alpha <span class="ot">&lt;-</span> points[<span class="fu">nrow</span>(points), <span class="st">"alpha"</span>]</span>
+<span id="cb9-30"><a href="#cb9-30" aria-hidden="true" tabindex="-1"></a>      points[<span class="fu">nrow</span>(points), <span class="st">"alpha"</span>] <span class="ot">&lt;-</span> <span class="fu">eval</span>(<span class="fu">parse</span>(<span class="at">text =</span> <span class="fu">paste0</span>(alpha, actions[i], curve<span class="sc">$</span>angle)))</span>
+<span id="cb9-31"><a href="#cb9-31" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb9-32"><a href="#cb9-32" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb9-33"><a href="#cb9-33" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb9-34"><a href="#cb9-34" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="at">data =</span> points, <span class="fu">aes</span>(x,y)) <span class="sc">+</span> </span>
+<span id="cb9-35"><a href="#cb9-35" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_path</span>() <span class="sc">+</span> </span>
+<span id="cb9-36"><a href="#cb9-36" aria-hidden="true" tabindex="-1"></a>    <span class="fu">coord_fixed</span>() <span class="sc">+</span> </span>
+<span id="cb9-37"><a href="#cb9-37" aria-hidden="true" tabindex="-1"></a>    <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>,</span>
+<span id="cb9-38"><a href="#cb9-38" aria-hidden="true" tabindex="-1"></a>          <span class="at">panel.background =</span> <span class="fu">element_rect</span>(<span class="at">fill =</span> <span class="st">"white"</span>), </span>
+<span id="cb9-39"><a href="#cb9-39" aria-hidden="true" tabindex="-1"></a>          <span class="at">panel.grid =</span> <span class="fu">element_blank</span>(), </span>
+<span id="cb9-40"><a href="#cb9-40" aria-hidden="true" tabindex="-1"></a>          <span class="at">axis.ticks =</span> <span class="fu">element_blank</span>(), </span>
+<span id="cb9-41"><a href="#cb9-41" aria-hidden="true" tabindex="-1"></a>          <span class="at">axis.title =</span> <span class="fu">element_blank</span>(), </span>
+<span id="cb9-42"><a href="#cb9-42" aria-hidden="true" tabindex="-1"></a>          <span class="at">axis.text =</span> <span class="fu">element_blank</span>()) <span class="sc">+</span> </span>
+<span id="cb9-43"><a href="#cb9-43" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">caption =</span> curve<span class="sc">$</span>name)</span>
+<span id="cb9-44"><a href="#cb9-44" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb9-45"><a href="#cb9-45" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-46"><a href="#cb9-46" aria-hidden="true" tabindex="-1"></a><span class="fu">draw_l_curve</span>(curve1); <span class="fu">draw_l_curve</span>(curve2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="IFS_Fractals_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="IFS_Fractals_files/figure-html/unnamed-chunk-5-2.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>
