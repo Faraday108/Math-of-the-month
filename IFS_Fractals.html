@@ -192,7 +192,7 @@ f_w(x,y)=\left[\begin{array}{cc}
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Setup initial parameters</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>maxiter <span class="ot">&lt;-</span> <span class="dv">10000</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>maxiter <span class="ot">&lt;-</span> <span class="dv">100000</span></span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">0</span></span>
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="dv">0</span></span>
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> <span class="dv">0</span></span>
@@ -356,7 +356,7 @@ I decided to explore this with both built in functionality and by creating a new
 <span id="cb4-48"><a href="#cb4-48" aria-hidden="true" tabindex="-1"></a><span class="fu">make_tree</span>(s1, <span class="dv">10</span>, .<span class="dv">8</span>, pi<span class="sc">/</span><span class="dv">4</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
-<p><img src="IFS_Fractals_files/figure-html/unnamed-chunk-2-1.png" class="img-fluid" width="672"></p>
+<p><img src="IFS_Fractals_files/figure-html/create_trees-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
 </section>
@@ -409,7 +409,7 @@ Next, the <code>make_treesS4</code> function was adapted from <code>make_tree</c
 <span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(<span class="fu">make_treeS4</span>(s1S4, <span class="dv">12</span>, r, pi<span class="sc">/</span><span class="dv">12</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
-<p><img src="IFS_Fractals_files/figure-html/unnamed-chunk-3-1.png" class="img-fluid" width="672"></p>
+<p><img src="IFS_Fractals_files/figure-html/create_trees_S4-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
 </section>
@@ -439,7 +439,7 @@ Next, the <code>make_treesS4</code> function was adapted from <code>make_tree</c
 <span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(x0, y0, <span class="at">type =</span> <span class="st">"l"</span>, <span class="at">asp =</span> <span class="dv">1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
-<p><img src="IFS_Fractals_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid" width="672"></p>
+<p><img src="IFS_Fractals_files/figure-html/LevyC-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
 </section>
@@ -513,10 +513,10 @@ Here I’ve created a basic L-system process that takes a given curve that is a 
 <span id="cb9-46"><a href="#cb9-46" aria-hidden="true" tabindex="-1"></a><span class="fu">draw_l_curve</span>(curve1); <span class="fu">draw_l_curve</span>(curve2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
-<p><img src="IFS_Fractals_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid" width="672"></p>
+<p><img src="IFS_Fractals_files/figure-html/Lsystem-1.png" class="img-fluid" width="672"></p>
 </div>
 <div class="cell-output-display">
-<p><img src="IFS_Fractals_files/figure-html/unnamed-chunk-5-2.png" class="img-fluid" width="672"></p>
+<p><img src="IFS_Fractals_files/figure-html/Lsystem-2.png" class="img-fluid" width="672"></p>
 </div>
 </div>
 </section>
