@@ -336,3 +336,58 @@ draw_l_curve <- function(curve) {
 draw_l_curve(curve1); draw_l_curve(curve2)
 ```
 
+## Pythagoras Tree  
+This fractal is an extension of the Fractal Canopy (Binary Tree) above where instead of line segments, a square is the building block. To create the fractal, the 'top' face of the square has two new squares placed atop joining such that the three squares create a right triangle atop the original square.  
+The following two functions `branchRect` and `make_Pythagoras_tree` are adaptations of the `branch` and `make_tree` functions defined above. The `branchRect` operates on the the input `m`, a 4x2 matrix storing the `x` and `y` values of the vertices of a square. The square is translated to the origin, rotated according to the `t` (0 to $\pi/2$) parameter, scaled down, and translated back to their final coordinates. This is done for both rectangles of the new branch and returned as a list. The `make_Pythagoras_tree` function runs through a specified number of generations of `branchRect` and outputs a plot of the resulting fractal.  
+
+
+```{r PythagorasTree}
+r1 <- matrix(c(-.5,-.5,.5,.5,-.5,.5,.5,-.5), ncol = 2)
+t <- pi/3
+
+branchRect <- function(m, t) {
+  rotn <- matrix(c(cos(t), sin(t), -sin(t), cos(t)), ncol = 2)
+  rotp <- matrix(c(cos(t-pi/2), sin(t-pi/2), -sin(t-pi/2), cos(t-pi/2)), ncol = 2)
+  #center the input rectangle, middle of opposite corners is center
+  # subtract center coord from each 
+  mcenter <- matrix(rep((m[1,] + m[3,])/2, each = 4), ncol = 2)
+  mc <- m - mcenter
+  
+  r1c <- t(apply(mc, 1, function(x) {sin(t) * rotp %*% matrix(x, ncol = 1)}))
+  r1 <- r1c - matrix(rep(r1c[4,] - mc[3,], each = 4),ncol = 2) +  mcenter
+  r2c <- t(apply(mc, 1, function(x) {cos(t) * rotn %*% matrix(x, ncol = 1)}))
+  r2 <- r2c - matrix(rep(r2c[1,] - mc[2,], each = 4),ncol = 2) + mcenter
+  
+  list(r1, r2)
+}
+
+make_Pythagoras_tree <- function(trunk, generations, t) {
+  branches <- list(trunk)
+  n <- 1
+  k <- 1
+  for (j in 1:generations){
+    for (i in k:length(branches)) {
+      newBranches <- branchRect(branches[[i]], t)
+      #invisible(lapply(newBranches, polygon, col = "darkgreen"))
+      branches <- c(branches, newBranches)
+      n <- n + 1
+    }
+    k <- n
+  }
+  # Find extents of plot
+  # Finds max/min x and y of each rectangle
+  xy_rmax <- do.call(rbind, lapply(branches, function(x) apply(x, MARGIN = 2, FUN = max)))
+  xy_rmin <- do.call(rbind, lapply(branches, function(x) apply(x, MARGIN = 2, FUN = min)))
+  # Finds overall max/min x and y
+  xy_max <- apply(xy_rmax, MARGIN = 2, FUN = max)
+  xy_min <- apply(xy_rmin, MARGIN = 2, FUN = min)
+  xlims <- c(xy_min[1]-.5, xy_max[1]+.5); ylims <- c(xy_min[2]-.5, xy_max[2]+.5)
+  
+  plot(1,type = "n", asp = 1, xlim = xlims, ylim = ylims)
+  polygon(trunk, col = "darkgreen")
+  invisible(lapply(branches, polygon, col = "darkgreen"))
+}
+
+make_Pythagoras_tree(r1, generations = 10, t = pi/6)
+```
+
