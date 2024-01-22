@@ -1,0 +1,327 @@
+---
+title: "Buddhabrot Set"
+format: html
+execute: 
+  cache: true
+---
+
+## Initial Setup  
+The initial resource for this project was from "Scientific Computing on a Laptop" book I discovered on Github. Link to the [Mandelbrot](https://loiseaujc.github.io/Scientific_Computing_on_a_Laptop/Maths/Mandelbrot/binary_mandelbrot.html). Link to the [Buddhabrot](https://loiseaujc.github.io/Scientific_Computing_on_a_Laptop/Maths/Mandelbrot/buddhabrot.html).  
+This resource was written in Python so I have adapted sections of it for R.  
+The `trajectory` function takes a complex point and max iterations as arguments and computes the trajectories as it escapes. It does this by creating an empty list the same length as the `maxiter` input before iterating through the mandelbrot set relationship recording each point  c takes on as it escapes. The function ends when `abs(c) > 4` to keep the points within a radius of 2, though this should perhaps be expanded as it gives a circle due to the starting point being recorded. 
+
+```{r}
+library(RColorBrewer)
+library(ggplot2)
+library(dplyr)
+library(ash)
+
+trajectory <- function(c, maxiter) {
+  z <- data.frame(comp = rep(0, maxiter))
+  z$comp[1] <- c
+  c0 <- c
+  k <- 0
+  for (i in 1:(maxiter-1)) {
+    k <- i
+    c <- c^2 + c0
+    z$comp[i+1] <- c
+    if (abs(c) > 4)
+      break
+  }
+  # if ((k != (maxiter - 1)) & (k > .7 * maxiter)) {
+  if (k != (maxiter - 1)) {
+    z[1:(k+1),]
+  }
+}
+```
+
+
+## Sampling on grid  
+An initial quick method is to sample points from a regularly spaced grid. I found the results disappointing and moved on from this rather quickly. 
+
+```{r}
+#| eval: FALSE
+
+# Sampling grid of complex plane same way as done in Mandelbrot set generation
+# Problem noticed that it creates a regular grid of points. 
+x <- seq(-2, 1, length.out = 100)
+y <- seq(-1.5, 1.5, length.out = 100)
+cgrid <- expand.grid(x, y*1i)
+v1 <- cgrid$Var1+cgrid$Var2
+
+zs <- unlist(lapply(X = v1, FUN = trajectory, maxiter = 10), use.names = FALSE)
+
+data2 <- data.frame(x = Re(zs), y = Im(zs))
+
+ggplot(data = data2, aes(x=y, y=x)) + 
+  stat_bin_2d(
+    bins = c(length(x), length(y)), 
+              geom = "raster", 
+              interpolate = TRUE, 
+              drop = FALSE) + 
+  lims(y = c(1, -2), x = c(-1.5, 1.5)) + 
+  #theme_void() + 
+  theme(legend.position = "none") +
+  coord_equal() + 
+  scale_fill_gradientn(colors = c("black","red"),
+                       na.value = "black")
+```
+
+## Random sampling  
+In the above resource, they discussed random sampling of points from a circle of radius 2 in the complex plane. To speed it up, I included two helper functions that exclude points that are easily computed as part of the mandelbrot set (main bulb and secondary bulb). 
+```{r}
+############## Alternative method to . 
+# Finds points known to be in the main cardioid of mandelbrot set
+in_main_cardioid <- function(c) {
+  q <- (Re(c) - 1/4)^2 + Im(c)^2
+  q*(q + (Re(c) - 1/4)) <= Im(c)^2 /4
+}
+
+# Find points in period 2 bulb of mandelbrot set
+in_period2bulb <- function(c) {
+  (Re(c) + 1)^2 + Im(c)^2 <= 1/16
+}
+
+# Sample complex numbers randomly from circle in complex plane radius 2
+# Square root of radius gives uniform sampling over circle. 
+uniform_sampling <- function() {
+  c <- 0
+  while (in_main_cardioid(c) | in_period2bulb(c)) {
+    # Random radius 0 to 2, random angle -pi to pi times i
+    c <- sqrt(runif(1,0,4)) * exp(runif(1, -pi, pi)*1i)
+  }
+  c
+}
+
+# Sample as above, but with radius 3
+uniform_sampling3 <- function() {
+  c <- 0
+  while (in_main_cardioid(c) | in_period2bulb(c)) {
+    # Random radius 0 to 3, random angle -pi to pi times i
+    c <- sqrt(runif(1,0,9)) * exp(runif(1, -pi, pi)*1i)
+  }
+  c
+}
+
+uniform_sampling_v <- replicate(1000000, uniform_sampling3())
+
+library(pbapply)
+zs <- unlist(pblapply(X = uniform_sampling_v, 
+                    FUN = trajectory, 
+                    maxiter = 10), use.names = FALSE)
+
+data2 <- data.frame(x = Re(zs), y = Im(zs))
+
+binsize = 300
+ggplot(data = data2, aes(x=y, y=x)) + 
+  stat_bin_2d(
+    bins = c(binsize, binsize), 
+    geom = "raster", 
+    interpolate = TRUE, 
+    drop = FALSE) + 
+  lims(y = c(1, -2), x = c(-1.5, 1.5)) + 
+  #theme_void() + 
+  theme(legend.position = "none") +
+  coord_equal() + 
+  scale_fill_gradientn(colors = c("black","red"),
+                       na.value = "black")
+```
+
+I was much more pleased with this iteration of the function and was happy to leave it here as I worked on coloring next. I'll explore a more robust method later where you can only include points that diverge slowly as this will help give more information on escape trajectories.  
+
+## Color channels  
+To color the buddhabrot, the prior iterations used ggplot's ability to do 2d binning and color each point by it's count. A more interesting method is to run the simulation three times with different `maxiter` values and use these to color rgb channels.  
+
+```{r}
+##### COLOR CHANNELS
+uniform_sampling_v <- replicate(100000, uniform_sampling3())
+zs <- unlist(lapply(X = uniform_sampling_v, 
+                    FUN = trajectory, 
+                    maxiter = 10), use.names = FALSE)
+
+zs1 <- unlist(lapply(X = uniform_sampling_v, 
+                    FUN = trajectory, 
+                    maxiter = 10), use.names = FALSE)
+zs1data <- data.frame(x = Re(zs1), y = Im(zs1))
+
+zs2 <- unlist(lapply(X = uniform_sampling_v, 
+                    FUN = trajectory, 
+                    maxiter = 100), use.names = FALSE)
+zs2data <- data.frame(x = Re(zs2), y = Im(zs2))
+
+zs3 <- unlist(lapply(X = uniform_sampling_v, 
+                    FUN = trajectory, 
+                    maxiter = 1000), use.names = FALSE)
+zs3data <- data.frame(x = Re(zs3), y = Im(zs3))
+
+ch1 <- bin2(data.matrix(zs1data), 
+            matrix( c(-2,-2,1,2), 2, 2), 
+            nbin = c(300,300))$nc
+
+ch2 <- bin2(data.matrix(zs2data), 
+            matrix( c(-2,-2,1,2), 2, 2), 
+            nbin = c(300,300))$nc
+
+ch3 <- bin2(data.matrix(zs3data), 
+            matrix( c(-2,-2,1,2), 2, 2), 
+            nbin = c(300,300))$nc
+
+col1 <- rgb(ch1/max(ch1), ch2/max(ch2), ch3/max(ch3))
+
+ggplot(data = expand.grid(x = seq(-2, 1, length.out = 300), 
+                          y = seq(-2, 2, length.out = 300)), aes(y, -x)) + 
+  geom_raster(fill = col1, interpolate = TRUE) + 
+  coord_fixed()
+
+```
+
+## Long dwell time subset  
+The points that will have the longest trajectories can be classified as of high importance. These high importance points tend to be right at the border of the mandelbrot set. We can't know these in advance, but if they are recorded as the sets are run then in a subsequent run computation time can be reduced if only a subset of high importance points are included. 
+
+```{r}
+dwelldata_0 <- replicate(1000000, uniform_sampling())
+dwell_traj_0 <- lapply(X = dwelldata_0, 
+                    FUN = trajectory, 
+                    maxiter = 500)
+```
+
+Find points that had a dwell of 50 or more
+```{r}
+long_dwell <- data.frame(point = dwelldata_0, dwell = unlist(lapply(dwell_traj_0, length)))
+long_dwell <- long_dwell[long_dwell$dwell >= 50,]
+plot(Re(long_dwell$point), Im(long_dwell$point), asp = 1, pch = ".")
+```
+
+Can we find points that are equal to or better than these? If we move a small random distance from each point in the previous set, we can test what their trajectory length would be and if it is longer, we can include it in the long_dwell set.  
+
+```{r}
+mutate1 <- function(c) {
+      c + runif(1,0,.0001) * exp(runif(1, -pi, pi)*1i)
+}
+
+new_point <- unlist(lapply(long_dwell$point, mutate1))
+dwell_traj_new <- lapply(X = new_point, 
+                    FUN = trajectory, 
+                    maxiter = 500)
+mutate_long_dwell <- data.frame(point = new_point, 
+                                dwell = unlist(lapply(dwell_traj_new, length)))
+
+long_dwell <- rbind(long_dwell, mutate_long_dwell[which(long_dwell$dwell < mutate_long_dwell$dwell),])
+
+```
+
+The prior idea needs to be implemented for different color channels! I need to implement it where, for different max iterations, we can find long dwell times up to each max iteration and color these points in three channels: R, G, B
+
+```{r}
+dwelldata_0 <- replicate(100000, uniform_sampling3())
+dwell_traj_0 <- lapply(X = dwelldata_0, 
+                    FUN = trajectory, 
+                    maxiter = 5000)
+
+dwell_traj_0_imprnt <- dwell_traj_0[which(unlist(lapply(dwell_traj_0, length)) >= 50)]
+
+dwell_traj_0_mutate <- dwelldata_0[which(unlist(lapply(dwell_traj_0, length)) >= 30)] %>% 
+  mutate1() %>%
+  lapply(FUN = trajectory, maxiter = 5000) 
+
+find_long_dwell <- function(trajectories, maxiter = c(10, 100, 1000)) {
+  dwell_length <- unlist(lapply(trajectories, length))
+  dwell1000 <- trajectories[which(dwell_length > .4*maxiter[3])]
+  dwell100 <- trajectories[which((dwell_length >= .5*maxiter[2]) & (dwell_length <= maxiter[2]))]
+  dwell10 <- trajectories[which((dwell_length >= .5*maxiter[1]) & (dwell_length <= maxiter[1]))]
+
+  rbind(data.frame(traj = unlist(dwell10), 
+                   channel = rep("dwell10", 
+                                 times = length(unlist(dwell10)))),
+        data.frame(traj = unlist(dwell100), 
+                   channel = rep("dwell100", 
+                                 times = length(unlist(dwell100)))),
+        data.frame(traj = unlist(dwell1000), 
+                   channel = rep("dwell1000", 
+                                 times = length(unlist(dwell1000)))))
+}
+
+test <- find_long_dwell(trajectories = dwell_traj_0_mutate, maxiter = c(50, 500, 5000))
+
+bbcolors <- function(data, pxl) {
+  zs10 <- with(subset(data, channel == "dwell10"), 
+               data.frame(x = Re(traj), y = Im(traj)))
+  zs100 <- with(subset(data, channel == "dwell100"), 
+                data.frame(x = Re(traj), y = Im(traj)))
+  zs1000 <- with(subset(data, channel == "dwell1000"), 
+                 data.frame(x = Re(traj), y = Im(traj)))
+  
+  ch_long1 <- bin2(data.matrix(zs10), 
+                   matrix( c(-2,-2,1,2), 2, 2), 
+                   nbin = c(pxl,pxl))$nc
+  
+  ch_long2 <- bin2(data.matrix(zs100), 
+                   matrix( c(-2,-2,1,2), 2, 2), 
+                   nbin = c(pxl,pxl))$nc
+  
+  ch_long3 <- bin2(data.matrix(zs1000), 
+                   matrix( c(-2,-2,1,2), 2, 2), 
+                   nbin = c(pxl,pxl))$nc
+  
+  col_long1 <- rgb(ch_long1/max(ch_long1), 
+                   ch_long2/max(ch_long2), 
+                   ch_long3/max(ch_long3))
+  
+  ggplot(data = expand.grid(x = seq(-2, 1, length.out = pxl), 
+                          y = seq(-2, 2, length.out = pxl)), aes(y, -x)) + 
+  geom_raster(fill = col_long1) + 
+  coord_fixed()
+}
+
+bbcolors(test, 300)
+```
+
+
+```{r}
+zs_long1 <- unlist(lapply(X = long_dwell$point, 
+                    FUN = trajectory, 
+                    maxiter = 10), use.names = FALSE)
+zs_long1data <- ifelse(is.null(zs_long1), 0, data.frame(x = Re(zs_long1), y = Im(zs_long1)))
+
+zs_long2 <- unlist(lapply(X = long_dwell$point, 
+                    FUN = trajectory, 
+                    maxiter = 100), use.names = FALSE)
+zs_long2data <- data.frame(x = Re(zs_long2), y = Im(zs_long2))
+
+zs_long3 <- unlist(lapply(X = long_dwell$point, 
+                    FUN = trajectory, 
+                    maxiter = 1000), use.names = FALSE)
+zs_long3data <- data.frame(x = Re(zs_long3), y = Im(zs_long3))
+
+ch_long1 <- bin2(data.matrix(zs_long1data), 
+            matrix( c(-2,-2,1,2), 2, 2), 
+            nbin = c(300,300))$nc
+
+ch_long2 <- bin2(data.matrix(zs_long2data), 
+            matrix( c(-2,-2,1,2), 2, 2), 
+            nbin = c(300,300))$nc
+
+ch_long3 <- bin2(data.matrix(zs_long3data), 
+            matrix( c(-2,-2,1,2), 2, 2), 
+            nbin = c(300,300))$nc
+
+col_long1 <- rgb(ch_long1/max(ch_long1), 
+                 ch_long2/max(ch_long2), 
+                 ch_long3/max(ch_long3))
+
+ggplot(data = expand.grid(x = seq(-2, 1, length.out = 300), 
+                          y = seq(-2, 2, length.out = 300)), aes(y, -x)) + 
+  geom_raster(fill = col_long1, interpolate = TRUE) + 
+  coord_fixed()
+
+ggplot(data = zs_long3data, aes(y, x)) + 
+  geom_bin_2d(bins = 300, drop = FALSE) + 
+  lims(y = c(1, -2), x = c(-1.5, 1.5)) + 
+  coord_fixed() + 
+  scale_fill_continuous(type = "viridis") + 
+  theme_void()
+```
+
+
+
+
