@@ -1,0 +1,130 @@
+---
+title: "Conway's Game of Life"
+format: 
+  html: 
+    code-fold: true
+---
+
+## Introduction  
+In this writeup, a I chose to explore a programming challenge that a family member mentioned to me - Conway's game of life. This "game" is a cellular automation based on simple iteration of a set of rules. The initial state, in this simulation a random set of points, evolves via the rules over time. 
+
+### Rules
+* Any cell with fewer than 2 live neighbors dies
+* Any live cell with two or three live neighbors lives
+* Any live cell with more than three live neighbors dies
+* Any dead cell with exactly three live neighbors becomes live
+
+### Rules condensed  
+* Any live cell with two or three neighbors lives
+* Any dead cell with three live neighbors becomes live
+* All other cells die or remain dead
+
+### Implementation  
+I worked through two primary iterations of the Game of Life: the first based on for loops which are inherently slow in R and the second utilizing R's strong suit of vectorized code. The brilliant implementation for the vectorized version I first saw [here](https://github.com/WinVector/FastBaseR/blob/master/R/ConwayLife.R).   
+
+### For loops Implementation  
+**Steps**  
+* Create a dataframe to store x and y coordinates including a third column of the cell's state: 0 for dead or 1 for live. 
+* Write a function to calculate next stage: iterates over each cell and count number of live neighbors to determine state. Applies rules to determine whether cell is alive or dead in next generation. 
+* This implementation, since it uses for loops in R, is rather slow. 
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(gganimate)
+grid <- -10:10
+df1 <- expand.grid(x = grid, y = grid) %>%
+  cbind(l = rbinom(length(grid) * length(grid), 1, .5), 
+        gen = 1)
+
+make_generations <- function(generations = 10, initial) {
+  df <- initial
+  for (j in 1:generations) {
+    new <- data.frame(x = integer(), y = integer(), l = integer())
+    for (i in 1:nrow(df)) {
+      li <- df[i,]$l
+      xi <- df[i,]$x
+      yi <- df[i,]$y
+      ni <- filter(df, (x %in% c(xi-1, xi, xi+1)) & 
+                     (y %in% c(yi-1, yi, yi+1))) %>% 
+        summarize(sum = sum(l))
+      if (li == 1) {
+        lnew <- ifelse((ni - 1) %in% c(2,3), 1, 0)
+      } else {
+        lnew <- ifelse(ni == 3, 1, 0)
+      }
+      new <- add_row(new, x = xi, y = yi, l = lnew)
+    }
+    new$gen <- j
+    initial <- rbind(initial, new)
+    df <- new
+  }
+  initial
+}
+
+t1 <- Sys.time()
+test <- make_generations(10, df1)
+cat("Elapsed Time:", Sys.time() - t1, "seconds")
+
+p <- ggplot(test, aes(x, y, fill = l, color = "black")) + 
+  geom_raster()
+p + transition_manual(gen)
+```
+
+### Streamlined using R's strong suit: Vectors
+### Vectorized Code Implementation  
+**Steps**  
+* Based on a matrix instead of a dataframe where each cell of the matrix stores a 0 or 1 to denote dead and alive cells. 
+* Write a function to calculate next stage. 
+  * This new function copies the matrix 8 times shifting each iteration by including a row or column of zeros, effectively shifting each neighboring cell to the current cell. The number of 1's (live cells) adjacent to a cell is then simply the sum of these 8 shifted matrices. 
+* The result is returned as a long dataframe so it can be animated via `gganimage::transition_states` 
+
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(gganimate)
+m <- matrix(rbinom(400, 1, .5), 20, 20)
+
+matrix_to_long <- function(m) {
+  m %>% 
+    data.frame() %>%
+    cbind(y = 1:nrow(m), .) %>%
+    pivot_longer(!y, names_to = "x") %>%
+    group_by(y) %>%
+    mutate("x" = row_number()) %>%
+    ungroup()
+}
+
+make_generations2 <- function(generations = 10, mtrix) {
+  initial <- matrix_to_long(mtrix) %>% cbind(gen = 1)
+  for (i in 1:generations) {
+    nrow <- dim(mtrix)[[1]]
+    ncol <- dim(mtrix)[[2]]
+    m_up <- rbind(mtrix[-1, , drop = FALSE], 0)
+    m_down <- rbind(0, mtrix[-nrow, , drop = FALSE])
+    m_left <- cbind(mtrix[, -1, drop = FALSE], 0)
+    m_right <- cbind(0, mtrix[, -ncol, drop = FALSE])
+    m_upleft <- cbind(m_up[, -1, drop = FALSE], 0)
+    m_upright <- cbind(0, m_up[, -ncol, drop = FALSE])
+    m_downleft <- cbind(m_down[, -1, drop = FALSE], 0)
+    m_downright <- cbind(0, m_down[, -ncol, drop = FALSE])
+    pop <- m_up + m_down + m_right + m_left + m_upleft + m_upright + m_downleft + m_downright
+    mtrix <- (pop == 3) | (mtrix & (pop >= 2) & (pop <= 3))
+    new_gen <- cbind(matrix_to_long(mtrix), gen = i+1)
+    initial <- rbind(initial, new_gen)
+  }
+  initial
+}
+
+t2 <- Sys.time()
+test <- make_generations2(20, m)
+cat("Elapsed Time:", Sys.time() - t2, "seconds")
+
+p <- ggplot(test, aes(x, y, fill = value)) + 
+  geom_raster()
+p + transition_states(gen)
+```
+
+## Shiny app
+To expand on this challenge, I create a Shiny app that allows for additional flexibility in the simulation where a user can change the frame rate, size of the grid, colors of cells, and initial proportion of random live cells. The app can be found at [Conway's Game of Life](https://rx31wu-nathan-young.shinyapps.io/Game_of_Life/)
