@@ -96,7 +96,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <section id="introduction" class="level2">
 <h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
-<p>In this writeup, a I chose to explore a programming challenge that a family member mentioned to me - Conway’s game of life. This “game” is a cellular automation based on simple iteration of a set of rules. The initial state, in this simulation a random set of points, evolves via the rules over time.</p>
+<p>In this writeup, I chose to explore a programming challenge that a family member mentioned to me - Conway’s game of life. This “game” is a cellular automation based on simple iteration of a set of rules. The initial state, in this simulation a random set of points, evolves via the rules over time.</p>
 <section id="rules" class="level3">
 <h3 class="anchored" data-anchor-id="rules">Rules</h3>
 <ul>
@@ -114,77 +114,66 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>All other cells die or remain dead</li>
 </ul>
 </section>
-<section id="implementation" class="level3">
-<h3 class="anchored" data-anchor-id="implementation">Implementation</h3>
-<p>I worked through two primary iterations of the Game of Life: the first based on for loops which are inherently slow in R and the second utilizing R’s strong suit of vectorized code. The brilliant implementation for the vectorized version I first saw <a href="https://github.com/WinVector/FastBaseR/blob/master/R/ConwayLife.R">here</a>.</p>
 </section>
+<section id="implementation" class="level2">
+<h2 class="anchored" data-anchor-id="implementation">Implementation</h2>
+<p>I worked through two primary iterations of the Game of Life: the first based on for loops which are inherently slow in R and the second utilizing R’s strong suit of vectorized code. The brilliant implementation for the vectorized version I first saw <a href="https://github.com/WinVector/FastBaseR/blob/master/R/ConwayLife.R">here</a>.</p>
 <section id="for-loops-implementation" class="level3">
 <h3 class="anchored" data-anchor-id="for-loops-implementation">For loops Implementation</h3>
-<p><strong>Steps</strong><br>
-* Create a dataframe to store x and y coordinates including a third column of the cell’s state: 0 for dead or 1 for live. * Write a function to calculate next stage: iterates over each cell and count number of live neighbors to determine state. Applies rules to determine whether cell is alive or dead in next generation. * This implementation, since it uses for loops in R, is rather slow.</p>
+<p><strong>Steps</strong></p>
+<ul>
+<li><p>Create a dataframe to store x and y coordinates including a third column of the cell’s state: 0 for dead or 1 for live.</p></li>
+<li><p>Write a function to calculate next stage: iterates over each cell and count number of live neighbors to determine state. Applies rules to determine whether cell is alive or dead in next generation.</p></li>
+<li><p>This implementation, since it uses for loops in R, is rather slow.</p></li>
+</ul>
 <div class="cell">
 <details>
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</details>
-<div class="cell-output cell-output-stderr">
-<pre><code>── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
-✔ dplyr     1.1.4     ✔ readr     2.1.4
-✔ forcats   1.0.0     ✔ stringr   1.5.1
-✔ ggplot2   3.4.4     ✔ tibble    3.2.1
-✔ lubridate 1.9.3     ✔ tidyr     1.3.0
-✔ purrr     1.0.2     
-── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
-✖ dplyr::filter() masks stats::filter()
-✖ dplyr::lag()    masks stats::lag()
-ℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors</code></pre>
-</div>
-<details>
-<summary>Code</summary>
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(gganimate)</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>grid <span class="ot">&lt;-</span> <span class="sc">-</span><span class="dv">10</span><span class="sc">:</span><span class="dv">10</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>df1 <span class="ot">&lt;-</span> <span class="fu">expand.grid</span>(<span class="at">x =</span> grid, <span class="at">y =</span> grid) <span class="sc">%&gt;%</span></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cbind</span>(<span class="at">l =</span> <span class="fu">rbinom</span>(<span class="fu">length</span>(grid) <span class="sc">*</span> <span class="fu">length</span>(grid), <span class="dv">1</span>, .<span class="dv">5</span>), </span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>        <span class="at">gen =</span> <span class="dv">1</span>)</span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>make_generations <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">generations =</span> <span class="dv">10</span>, initial) {</span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  df <span class="ot">&lt;-</span> initial</span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (j <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>generations) {</span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    new <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> <span class="fu">integer</span>(), <span class="at">y =</span> <span class="fu">integer</span>(), <span class="at">l =</span> <span class="fu">integer</span>())</span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">nrow</span>(df)) {</span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>      li <span class="ot">&lt;-</span> df[i,]<span class="sc">$</span>l</span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>      xi <span class="ot">&lt;-</span> df[i,]<span class="sc">$</span>x</span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>      yi <span class="ot">&lt;-</span> df[i,]<span class="sc">$</span>y</span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>      ni <span class="ot">&lt;-</span> <span class="fu">filter</span>(df, (x <span class="sc">%in%</span> <span class="fu">c</span>(xi<span class="dv">-1</span>, xi, xi<span class="sc">+</span><span class="dv">1</span>)) <span class="sc">&amp;</span> </span>
-<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>                     (y <span class="sc">%in%</span> <span class="fu">c</span>(yi<span class="dv">-1</span>, yi, yi<span class="sc">+</span><span class="dv">1</span>))) <span class="sc">%&gt;%</span> </span>
-<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>        <span class="fu">summarize</span>(<span class="at">sum =</span> <span class="fu">sum</span>(l))</span>
-<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>      <span class="cf">if</span> (li <span class="sc">==</span> <span class="dv">1</span>) {</span>
-<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>        lnew <span class="ot">&lt;-</span> <span class="fu">ifelse</span>((ni <span class="sc">-</span> <span class="dv">1</span>) <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">2</span>,<span class="dv">3</span>), <span class="dv">1</span>, <span class="dv">0</span>)</span>
-<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>      } <span class="cf">else</span> {</span>
-<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>        lnew <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(ni <span class="sc">==</span> <span class="dv">3</span>, <span class="dv">1</span>, <span class="dv">0</span>)</span>
-<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>      }</span>
-<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>      new <span class="ot">&lt;-</span> <span class="fu">add_row</span>(new, <span class="at">x =</span> xi, <span class="at">y =</span> yi, <span class="at">l =</span> lnew)</span>
-<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>    }</span>
-<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>    new<span class="sc">$</span>gen <span class="ot">&lt;-</span> j</span>
-<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>    initial <span class="ot">&lt;-</span> <span class="fu">rbind</span>(initial, new)</span>
-<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>    df <span class="ot">&lt;-</span> new</span>
-<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>  initial</span>
-<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>t1 <span class="ot">&lt;-</span> <span class="fu">Sys.time</span>()</span>
-<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>test <span class="ot">&lt;-</span> <span class="fu">make_generations</span>(<span class="dv">10</span>, df1)</span>
-<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Elapsed Time:"</span>, <span class="fu">Sys.time</span>() <span class="sc">-</span> t1, <span class="st">"seconds"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">suppressPackageStartupMessages</span>(<span class="fu">library</span>(tidyverse))</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(gganimate)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>grid <span class="ot">&lt;-</span> <span class="sc">-</span><span class="dv">10</span><span class="sc">:</span><span class="dv">10</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>df1 <span class="ot">&lt;-</span> <span class="fu">expand.grid</span>(<span class="at">x =</span> grid, <span class="at">y =</span> grid) <span class="sc">%&gt;%</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cbind</span>(<span class="at">l =</span> <span class="fu">rbinom</span>(<span class="fu">length</span>(grid) <span class="sc">*</span> <span class="fu">length</span>(grid), <span class="dv">1</span>, .<span class="dv">5</span>), </span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>        <span class="at">gen =</span> <span class="dv">1</span>)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>make_generations <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">generations =</span> <span class="dv">10</span>, initial) {</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  df <span class="ot">&lt;-</span> initial</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (j <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>generations) {</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    new <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> <span class="fu">integer</span>(), <span class="at">y =</span> <span class="fu">integer</span>(), <span class="at">l =</span> <span class="fu">integer</span>())</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">nrow</span>(df)) {</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>      li <span class="ot">&lt;-</span> df[i,]<span class="sc">$</span>l</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>      xi <span class="ot">&lt;-</span> df[i,]<span class="sc">$</span>x</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>      yi <span class="ot">&lt;-</span> df[i,]<span class="sc">$</span>y</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>      ni <span class="ot">&lt;-</span> <span class="fu">filter</span>(df, (x <span class="sc">%in%</span> <span class="fu">c</span>(xi<span class="dv">-1</span>, xi, xi<span class="sc">+</span><span class="dv">1</span>)) <span class="sc">&amp;</span> </span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>                     (y <span class="sc">%in%</span> <span class="fu">c</span>(yi<span class="dv">-1</span>, yi, yi<span class="sc">+</span><span class="dv">1</span>))) <span class="sc">%&gt;%</span> </span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>        <span class="fu">summarize</span>(<span class="at">sum =</span> <span class="fu">sum</span>(l))</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>      <span class="cf">if</span> (li <span class="sc">==</span> <span class="dv">1</span>) {</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>        lnew <span class="ot">&lt;-</span> <span class="fu">ifelse</span>((ni <span class="sc">-</span> <span class="dv">1</span>) <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">2</span>,<span class="dv">3</span>), <span class="dv">1</span>, <span class="dv">0</span>)</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>      } <span class="cf">else</span> {</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>        lnew <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(ni <span class="sc">==</span> <span class="dv">3</span>, <span class="dv">1</span>, <span class="dv">0</span>)</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>      }</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>      new <span class="ot">&lt;-</span> <span class="fu">add_row</span>(new, <span class="at">x =</span> xi, <span class="at">y =</span> yi, <span class="at">l =</span> lnew)</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>    new<span class="sc">$</span>gen <span class="ot">&lt;-</span> j</span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>    initial <span class="ot">&lt;-</span> <span class="fu">rbind</span>(initial, new)</span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>    df <span class="ot">&lt;-</span> new</span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>  initial</span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>t1 <span class="ot">&lt;-</span> <span class="fu">Sys.time</span>()</span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>test <span class="ot">&lt;-</span> <span class="fu">make_generations</span>(<span class="dv">10</span>, df1)</span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Elapsed Time:"</span>, <span class="fu">Sys.time</span>() <span class="sc">-</span> t1, <span class="st">"seconds"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
-<pre><code>Elapsed Time: 8.691469 seconds</code></pre>
+<pre><code>Elapsed Time: 8.181234 seconds</code></pre>
 </div>
 <details>
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>p <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(test, <span class="fu">aes</span>(x, y, <span class="at">fill =</span> l, <span class="at">color =</span> <span class="st">"black"</span>)) <span class="sc">+</span> </span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_raster</span>()</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>p <span class="sc">+</span> <span class="fu">transition_manual</span>(gen)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>p <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(test, <span class="fu">aes</span>(x, y, <span class="at">fill =</span> l, <span class="at">color =</span> <span class="st">"black"</span>)) <span class="sc">+</span> </span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_raster</span>()</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>p <span class="sc">+</span> <span class="fu">transition_manual</span>(gen)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stderr">
 <pre><code>nframes and fps adjusted to match transition</code></pre>
@@ -199,59 +188,63 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="vectorized-code-implementation" class="level3">
 <h3 class="anchored" data-anchor-id="vectorized-code-implementation">Vectorized Code Implementation</h3>
-<p><strong>Steps</strong><br>
-* Based on a matrix instead of a dataframe where each cell of the matrix stores a 0 or 1 to denote dead and alive cells. * Write a function to calculate next stage. * This new function copies the matrix 8 times shifting each iteration by including a row or column of zeros, effectively shifting each neighboring cell to the current cell. The number of 1’s (live cells) adjacent to a cell is then simply the sum of these 8 shifted matrices. * The result is returned as a long dataframe so it can be animated via <code>gganimage::transition_states</code></p>
+<p><strong>Steps</strong></p>
+<ul>
+<li><p>Based on a matrix instead of a dataframe where each cell of the matrix stores a 0 or 1 to denote dead and alive cells.</p></li>
+<li><p>Write a function to calculate next stage.</p>
+<ul>
+<li>This new function copies the matrix 8 times shifting each iteration by including a row or column of zeros, effectively shifting each neighboring cell to the current cell. The number of 1’s (live cells) adjacent to a cell is then simply the sum of these 8 shifted matrices.</li>
+</ul></li>
+<li><p>The result is returned as a long dataframe so it can be animated via <code>gganimage::transition_states</code></p></li>
+</ul>
 <div class="cell">
 <details>
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(gganimate)</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>m <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">rbinom</span>(<span class="dv">400</span>, <span class="dv">1</span>, .<span class="dv">5</span>), <span class="dv">20</span>, <span class="dv">20</span>)</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>matrix_to_long <span class="ot">&lt;-</span> <span class="cf">function</span>(m) {</span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  m <span class="sc">%&gt;%</span> </span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">data.frame</span>() <span class="sc">%&gt;%</span></span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">cbind</span>(<span class="at">y =</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">nrow</span>(m), .) <span class="sc">%&gt;%</span></span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    <span class="fu">pivot_longer</span>(<span class="sc">!</span>y, <span class="at">names_to =</span> <span class="st">"x"</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    <span class="fu">group_by</span>(y) <span class="sc">%&gt;%</span></span>
-<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="st">"x"</span> <span class="ot">=</span> <span class="fu">row_number</span>()) <span class="sc">%&gt;%</span></span>
-<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ungroup</span>()</span>
-<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>make_generations2 <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">generations =</span> <span class="dv">10</span>, mtrix) {</span>
-<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>  initial <span class="ot">&lt;-</span> <span class="fu">matrix_to_long</span>(mtrix) <span class="sc">%&gt;%</span> <span class="fu">cbind</span>(<span class="at">gen =</span> <span class="dv">1</span>)</span>
-<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>generations) {</span>
-<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>    nrow <span class="ot">&lt;-</span> <span class="fu">dim</span>(mtrix)[[<span class="dv">1</span>]]</span>
-<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>    ncol <span class="ot">&lt;-</span> <span class="fu">dim</span>(mtrix)[[<span class="dv">2</span>]]</span>
-<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>    m_up <span class="ot">&lt;-</span> <span class="fu">rbind</span>(mtrix[<span class="sc">-</span><span class="dv">1</span>, , <span class="at">drop =</span> <span class="cn">FALSE</span>], <span class="dv">0</span>)</span>
-<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>    m_down <span class="ot">&lt;-</span> <span class="fu">rbind</span>(<span class="dv">0</span>, mtrix[<span class="sc">-</span>nrow, , <span class="at">drop =</span> <span class="cn">FALSE</span>])</span>
-<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>    m_left <span class="ot">&lt;-</span> <span class="fu">cbind</span>(mtrix[, <span class="sc">-</span><span class="dv">1</span>, <span class="at">drop =</span> <span class="cn">FALSE</span>], <span class="dv">0</span>)</span>
-<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>    m_right <span class="ot">&lt;-</span> <span class="fu">cbind</span>(<span class="dv">0</span>, mtrix[, <span class="sc">-</span>ncol, <span class="at">drop =</span> <span class="cn">FALSE</span>])</span>
-<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>    m_upleft <span class="ot">&lt;-</span> <span class="fu">cbind</span>(m_up[, <span class="sc">-</span><span class="dv">1</span>, <span class="at">drop =</span> <span class="cn">FALSE</span>], <span class="dv">0</span>)</span>
-<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>    m_upright <span class="ot">&lt;-</span> <span class="fu">cbind</span>(<span class="dv">0</span>, m_up[, <span class="sc">-</span>ncol, <span class="at">drop =</span> <span class="cn">FALSE</span>])</span>
-<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a>    m_downleft <span class="ot">&lt;-</span> <span class="fu">cbind</span>(m_down[, <span class="sc">-</span><span class="dv">1</span>, <span class="at">drop =</span> <span class="cn">FALSE</span>], <span class="dv">0</span>)</span>
-<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a>    m_downright <span class="ot">&lt;-</span> <span class="fu">cbind</span>(<span class="dv">0</span>, m_down[, <span class="sc">-</span>ncol, <span class="at">drop =</span> <span class="cn">FALSE</span>])</span>
-<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a>    pop <span class="ot">&lt;-</span> m_up <span class="sc">+</span> m_down <span class="sc">+</span> m_right <span class="sc">+</span> m_left <span class="sc">+</span> m_upleft <span class="sc">+</span> m_upright <span class="sc">+</span> m_downleft <span class="sc">+</span> m_downright</span>
-<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a>    mtrix <span class="ot">&lt;-</span> (pop <span class="sc">==</span> <span class="dv">3</span>) <span class="sc">|</span> (mtrix <span class="sc">&amp;</span> (pop <span class="sc">&gt;=</span> <span class="dv">2</span>) <span class="sc">&amp;</span> (pop <span class="sc">&lt;=</span> <span class="dv">3</span>))</span>
-<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a>    new_gen <span class="ot">&lt;-</span> <span class="fu">cbind</span>(<span class="fu">matrix_to_long</span>(mtrix), <span class="at">gen =</span> i<span class="sc">+</span><span class="dv">1</span>)</span>
-<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a>    initial <span class="ot">&lt;-</span> <span class="fu">rbind</span>(initial, new_gen)</span>
-<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb7-34"><a href="#cb7-34" aria-hidden="true" tabindex="-1"></a>  initial</span>
-<span id="cb7-35"><a href="#cb7-35" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb7-36"><a href="#cb7-36" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-37"><a href="#cb7-37" aria-hidden="true" tabindex="-1"></a>t2 <span class="ot">&lt;-</span> <span class="fu">Sys.time</span>()</span>
-<span id="cb7-38"><a href="#cb7-38" aria-hidden="true" tabindex="-1"></a>test <span class="ot">&lt;-</span> <span class="fu">make_generations2</span>(<span class="dv">20</span>, m)</span>
-<span id="cb7-39"><a href="#cb7-39" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Elapsed Time:"</span>, <span class="fu">Sys.time</span>() <span class="sc">-</span> t2, <span class="st">"seconds"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>m <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">rbinom</span>(<span class="dv">400</span>, <span class="dv">1</span>, .<span class="dv">5</span>), <span class="dv">20</span>, <span class="dv">20</span>)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>matrix_to_long <span class="ot">&lt;-</span> <span class="cf">function</span>(m) {</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  m <span class="sc">%&gt;%</span> </span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">data.frame</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">cbind</span>(<span class="at">y =</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">nrow</span>(m), .) <span class="sc">%&gt;%</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">pivot_longer</span>(<span class="sc">!</span>y, <span class="at">names_to =</span> <span class="st">"x"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">group_by</span>(y) <span class="sc">%&gt;%</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="st">"x"</span> <span class="ot">=</span> <span class="fu">row_number</span>()) <span class="sc">%&gt;%</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ungroup</span>()</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>make_generations2 <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">generations =</span> <span class="dv">10</span>, mtrix) {</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>  initial <span class="ot">&lt;-</span> <span class="fu">matrix_to_long</span>(mtrix) <span class="sc">%&gt;%</span> <span class="fu">cbind</span>(<span class="at">gen =</span> <span class="dv">1</span>)</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>generations) {</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>    nrow <span class="ot">&lt;-</span> <span class="fu">dim</span>(mtrix)[[<span class="dv">1</span>]]</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>    ncol <span class="ot">&lt;-</span> <span class="fu">dim</span>(mtrix)[[<span class="dv">2</span>]]</span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>    m_up <span class="ot">&lt;-</span> <span class="fu">rbind</span>(mtrix[<span class="sc">-</span><span class="dv">1</span>, , <span class="at">drop =</span> <span class="cn">FALSE</span>], <span class="dv">0</span>)</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>    m_down <span class="ot">&lt;-</span> <span class="fu">rbind</span>(<span class="dv">0</span>, mtrix[<span class="sc">-</span>nrow, , <span class="at">drop =</span> <span class="cn">FALSE</span>])</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>    m_left <span class="ot">&lt;-</span> <span class="fu">cbind</span>(mtrix[, <span class="sc">-</span><span class="dv">1</span>, <span class="at">drop =</span> <span class="cn">FALSE</span>], <span class="dv">0</span>)</span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>    m_right <span class="ot">&lt;-</span> <span class="fu">cbind</span>(<span class="dv">0</span>, mtrix[, <span class="sc">-</span>ncol, <span class="at">drop =</span> <span class="cn">FALSE</span>])</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>    m_upleft <span class="ot">&lt;-</span> <span class="fu">cbind</span>(m_up[, <span class="sc">-</span><span class="dv">1</span>, <span class="at">drop =</span> <span class="cn">FALSE</span>], <span class="dv">0</span>)</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>    m_upright <span class="ot">&lt;-</span> <span class="fu">cbind</span>(<span class="dv">0</span>, m_up[, <span class="sc">-</span>ncol, <span class="at">drop =</span> <span class="cn">FALSE</span>])</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>    m_downleft <span class="ot">&lt;-</span> <span class="fu">cbind</span>(m_down[, <span class="sc">-</span><span class="dv">1</span>, <span class="at">drop =</span> <span class="cn">FALSE</span>], <span class="dv">0</span>)</span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>    m_downright <span class="ot">&lt;-</span> <span class="fu">cbind</span>(<span class="dv">0</span>, m_down[, <span class="sc">-</span>ncol, <span class="at">drop =</span> <span class="cn">FALSE</span>])</span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>    pop <span class="ot">&lt;-</span> m_up <span class="sc">+</span> m_down <span class="sc">+</span> m_right <span class="sc">+</span> m_left <span class="sc">+</span> m_upleft <span class="sc">+</span> m_upright <span class="sc">+</span> m_downleft <span class="sc">+</span> m_downright</span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>    mtrix <span class="ot">&lt;-</span> (pop <span class="sc">==</span> <span class="dv">3</span>) <span class="sc">|</span> (mtrix <span class="sc">&amp;</span> (pop <span class="sc">&gt;=</span> <span class="dv">2</span>) <span class="sc">&amp;</span> (pop <span class="sc">&lt;=</span> <span class="dv">3</span>))</span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>    new_gen <span class="ot">&lt;-</span> <span class="fu">cbind</span>(<span class="fu">matrix_to_long</span>(mtrix), <span class="at">gen =</span> i<span class="sc">+</span><span class="dv">1</span>)</span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>    initial <span class="ot">&lt;-</span> <span class="fu">rbind</span>(initial, new_gen)</span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>  initial</span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a>t2 <span class="ot">&lt;-</span> <span class="fu">Sys.time</span>()</span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a>test <span class="ot">&lt;-</span> <span class="fu">make_generations2</span>(<span class="dv">20</span>, m)</span>
+<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Elapsed Time:"</span>, <span class="fu">Sys.time</span>() <span class="sc">-</span> t2, <span class="st">"seconds"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
-<pre><code>Elapsed Time: 0.159198 seconds</code></pre>
+<pre><code>Elapsed Time: 0.1655519 seconds</code></pre>
 </div>
 <details>
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>p <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(test, <span class="fu">aes</span>(x, y, <span class="at">fill =</span> value)) <span class="sc">+</span> </span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_raster</span>()</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>p <span class="sc">+</span> <span class="fu">transition_states</span>(gen)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>p <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(test, <span class="fu">aes</span>(x, y, <span class="at">fill =</span> value)) <span class="sc">+</span> </span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_raster</span>()</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>p <span class="sc">+</span> <span class="fu">transition_states</span>(gen)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
 <p><img src="Conway-s-game-of-life_files/figure-html/unnamed-chunk-2-1.gif" class="img-fluid"></p>

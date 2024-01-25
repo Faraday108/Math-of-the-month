@@ -6,7 +6,7 @@ format:
 ---
 
 ## Introduction  
-In this writeup, a I chose to explore a programming challenge that a family member mentioned to me - Conway's game of life. This "game" is a cellular automation based on simple iteration of a set of rules. The initial state, in this simulation a random set of points, evolves via the rules over time. 
+In this writeup, I chose to explore a programming challenge that a family member mentioned to me - Conway's game of life. This "game" is a cellular automation based on simple iteration of a set of rules. The initial state, in this simulation a random set of points, evolves via the rules over time. 
 
 ### Rules
 * Any cell with fewer than 2 live neighbors dies
@@ -19,17 +19,20 @@ In this writeup, a I chose to explore a programming challenge that a family memb
 * Any dead cell with three live neighbors becomes live
 * All other cells die or remain dead
 
-### Implementation  
+## Implementation  
 I worked through two primary iterations of the Game of Life: the first based on for loops which are inherently slow in R and the second utilizing R's strong suit of vectorized code. The brilliant implementation for the vectorized version I first saw [here](https://github.com/WinVector/FastBaseR/blob/master/R/ConwayLife.R).   
 
 ### For loops Implementation  
 **Steps**  
-* Create a dataframe to store x and y coordinates including a third column of the cell's state: 0 for dead or 1 for live. 
-* Write a function to calculate next stage: iterates over each cell and count number of live neighbors to determine state. Applies rules to determine whether cell is alive or dead in next generation. 
+
+* Create a dataframe to store x and y coordinates including a third column of the cell's state: 0 for dead or 1 for live.  
+
+* Write a function to calculate next stage: iterates over each cell and count number of live neighbors to determine state. Applies rules to determine whether cell is alive or dead in next generation.  
+
 * This implementation, since it uses for loops in R, is rather slow. 
 
 ```{r}
-library(tidyverse)
+suppressPackageStartupMessages(library(tidyverse))
 library(ggplot2)
 library(gganimate)
 grid <- -10:10
@@ -74,16 +77,17 @@ p + transition_manual(gen)
 ### Streamlined using R's strong suit: Vectors
 ### Vectorized Code Implementation  
 **Steps**  
-* Based on a matrix instead of a dataframe where each cell of the matrix stores a 0 or 1 to denote dead and alive cells. 
-* Write a function to calculate next stage. 
-  * This new function copies the matrix 8 times shifting each iteration by including a row or column of zeros, effectively shifting each neighboring cell to the current cell. The number of 1's (live cells) adjacent to a cell is then simply the sum of these 8 shifted matrices. 
-* The result is returned as a long dataframe so it can be animated via `gganimage::transition_states` 
+
+* Based on a matrix instead of a dataframe where each cell of the matrix stores a 0 or 1 to denote dead and alive cells.  
+
+* Write a function to calculate next stage.  
+
+  * This new function copies the matrix 8 times shifting each iteration by including a row or column of zeros, effectively shifting each neighboring cell to the current cell. The number of 1's (live cells) adjacent to a cell is then simply the sum of these 8 shifted matrices.  
+  
+* The result is returned as a long dataframe so it can be animated via `gganimage::transition_states`  
 
 
 ```{r}
-library(tidyverse)
-library(ggplot2)
-library(gganimate)
 m <- matrix(rbinom(400, 1, .5), 20, 20)
 
 matrix_to_long <- function(m) {
