@@ -94,353 +94,427 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 </header>
 
+<section id="background" class="level2">
+<h2 class="anchored" data-anchor-id="background">Background</h2>
+<p>In this writeup, I continued my exploration of the beautiful Mandelbrot set fractal by examining other ways of exploring the convergence of the set. I discovered an amazing resource in the “Scientific Computing on a Laptop” book available on Github. A link to their implementation of the Mandelbrot set is <a href="https://loiseaujc.github.io/Scientific_Computing_on_a_Laptop/Maths/Mandelbrot/binary_mandelbrot.html">here</a> and a link to the Buddhabrot set is <a href="https://loiseaujc.github.io/Scientific_Computing_on_a_Laptop/Maths/Mandelbrot/buddhabrot.html">here</a>.<br>
+The original inspiration is written in Python so a large portion of my effort here was to reimplement the various functions in R. This was an interesting challenge as the two languages are different enough that I was required to reimplement large portions.<br>
+The difference in implementation between the Mandelbrot and Buddhabrot sets are what is used to color the individual pixels of the escaping points. In the Mandelbrot set, a point that hasn’t escaped within a certain number of iterations is colored black while a point that escapes is colored according to the number of iterations that it takes to escape. In the Buddhabrot set, an initial point is iterated over and <em>if it escapes</em>, each value that it takes on as it iterates is recorded as it’s escape trajectory. These trajectory points form the basis of a new coloring scheme and are used to color a region according to how many escaping points travel through that particular region. Truly beautiful <a href="https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/Nebulabrot_%285000%2C_500%2C_50%29.png/600px-Nebulabrot_%285000%2C_500%2C_50%29.png">visualizations</a>, such as the one in the “Scientific Computing on a Laptop” book, use multiple color channels such as red/green/blue and the regions are colored within each channel according to how long the escape trajectory a particular point has.</p>
+</section>
 <section id="initial-setup" class="level2">
 <h2 class="anchored" data-anchor-id="initial-setup">Initial Setup</h2>
-<p>The initial resource for this project was from “Scientific Computing on a Laptop” book I discovered on Github. Link to the <a href="https://loiseaujc.github.io/Scientific_Computing_on_a_Laptop/Maths/Mandelbrot/binary_mandelbrot.html">Mandelbrot</a>. Link to the <a href="https://loiseaujc.github.io/Scientific_Computing_on_a_Laptop/Maths/Mandelbrot/buddhabrot.html">Buddhabrot</a>.<br>
-This resource was written in Python so I have adapted sections of it for R.<br>
-The <code>trajectory</code> function takes a complex point and max iterations as arguments and computes the trajectories as it escapes. It does this by creating an empty list the same length as the <code>maxiter</code> input before iterating through the mandelbrot set relationship recording each point c takes on as it escapes. The function ends when <code>abs(c) &gt; 4</code> to keep the points within a radius of 2, though this should perhaps be expanded as it gives a circle due to the starting point being recorded.</p>
-<div class="cell" data-hash="Buddhabrot-Set-Writeup_cache/html/unnamed-chunk-1_6179b82bc0c3d0357fe700ed54e62fb3">
+<p>The main work of this visualization is to create the helper functions that process individual points. The first is the Buddhabrot <code>trajectory</code> function that takes arguments of a complex point and max iterations and stores each point it visits as it escapes. It does this by creating an empty list the same length as the <code>maxiter</code> input before iterating through the Mandelbrot set relationship recording each point c takes on as it escapes. The function ends when <code>abs(c) &gt; 4</code> to keep the points within a radius of 2, though this should perhaps be expanded as it gives a circle due to the starting point being recorded.</p>
+<div class="cell" data-hash="Buddhabrot-Set-Writeup_cache/html/setup_41a51afa0f96d36f082ff45dff4f7c11">
+<details>
+<summary>Code</summary>
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(RColorBrewer)</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'dplyr'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following objects are masked from 'package:stats':
-
-    filter, lag</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following objects are masked from 'package:base':
-
-    intersect, setdiff, setequal, union</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ash)</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>trajectory <span class="ot">&lt;-</span> <span class="cf">function</span>(c, maxiter) {</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  z <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">comp =</span> <span class="fu">rep</span>(<span class="dv">0</span>, maxiter))</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  z<span class="sc">$</span>comp[<span class="dv">1</span>] <span class="ot">&lt;-</span> c</span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  c0 <span class="ot">&lt;-</span> c</span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  k <span class="ot">&lt;-</span> <span class="dv">0</span></span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>(maxiter<span class="dv">-1</span>)) {</span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    k <span class="ot">&lt;-</span> i</span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    c <span class="ot">&lt;-</span> c<span class="sc">^</span><span class="dv">2</span> <span class="sc">+</span> c0</span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    z<span class="sc">$</span>comp[i<span class="sc">+</span><span class="dv">1</span>] <span class="ot">&lt;-</span> c</span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">abs</span>(c) <span class="sc">&gt;</span> <span class="dv">4</span>)</span>
-<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>      <span class="cf">break</span></span>
-<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>  <span class="co"># if ((k != (maxiter - 1)) &amp; (k &gt; .7 * maxiter)) {</span></span>
-<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (k <span class="sc">!=</span> (maxiter <span class="sc">-</span> <span class="dv">1</span>)) {</span>
-<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>    z[<span class="dv">1</span><span class="sc">:</span>(k<span class="sc">+</span><span class="dv">1</span>),]</span>
-<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ash)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(pbapply)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readr)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Helper function that returns the trajectory of an initial point c</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>trajectory <span class="ot">&lt;-</span> <span class="cf">function</span>(c, maxiter) {</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  z <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">comp =</span> <span class="fu">rep</span>(<span class="dv">0</span>, maxiter)) <span class="co"># allocate space up to maxiteration</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  z<span class="sc">$</span>comp[<span class="dv">1</span>] <span class="ot">&lt;-</span> c <span class="co"># store initial point in z</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  c0 <span class="ot">&lt;-</span> c <span class="co"># store initial c as c0 so it isn't overwritten in loop</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  k <span class="ot">&lt;-</span> <span class="dv">0</span> <span class="co"># initialize counter for use outside loop</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>(maxiter<span class="dv">-1</span>)) {</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    k <span class="ot">&lt;-</span> i <span class="co"># record loop number</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    c <span class="ot">&lt;-</span> c<span class="sc">^</span><span class="dv">2</span> <span class="sc">+</span> c0 <span class="co"># compute next trajectory point</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    z<span class="sc">$</span>comp[i<span class="sc">+</span><span class="dv">1</span>] <span class="ot">&lt;-</span> c <span class="co"># add new point to trajectory</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">abs</span>(c) <span class="sc">&gt;</span> <span class="dv">4</span>) <span class="co"># break for loop if |c| &gt; 4</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>      <span class="cf">break</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (k <span class="sc">!=</span> (maxiter <span class="sc">-</span> <span class="dv">1</span>)) { <span class="co"># return value only if not at max iteration</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>    z[<span class="dv">1</span><span class="sc">:</span>(k<span class="sc">+</span><span class="dv">1</span>),]</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 </div>
 </section>
 <section id="sampling-on-grid" class="level2">
 <h2 class="anchored" data-anchor-id="sampling-on-grid">Sampling on grid</h2>
-<p>An initial quick method is to sample points from a regularly spaced grid. I found the results disappointing and moved on from this rather quickly.</p>
-<div class="cell" data-hash="Buddhabrot-Set-Writeup_cache/html/unnamed-chunk-2_efa2cf9934413f82010441669b46a54a">
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Sampling grid of complex plane same way as done in Mandelbrot set generation</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Problem noticed that it creates a regular grid of points. </span></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="sc">-</span><span class="dv">2</span>, <span class="dv">1</span>, <span class="at">length.out =</span> <span class="dv">100</span>)</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="sc">-</span><span class="fl">1.5</span>, <span class="fl">1.5</span>, <span class="at">length.out =</span> <span class="dv">100</span>)</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>cgrid <span class="ot">&lt;-</span> <span class="fu">expand.grid</span>(x, y<span class="sc">*</span>1i)</span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>v1 <span class="ot">&lt;-</span> cgrid<span class="sc">$</span>Var1<span class="sc">+</span>cgrid<span class="sc">$</span>Var2</span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>zs <span class="ot">&lt;-</span> <span class="fu">unlist</span>(<span class="fu">lapply</span>(<span class="at">X =</span> v1, <span class="at">FUN =</span> trajectory, <span class="at">maxiter =</span> <span class="dv">10</span>), <span class="at">use.names =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>data2 <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> <span class="fu">Re</span>(zs), <span class="at">y =</span> <span class="fu">Im</span>(zs))</span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(<span class="at">data =</span> data2, <span class="fu">aes</span>(<span class="at">x=</span>y, <span class="at">y=</span>x)) <span class="sc">+</span> </span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_bin_2d</span>(</span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">bins =</span> <span class="fu">c</span>(<span class="fu">length</span>(x), <span class="fu">length</span>(y)), </span>
-<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>              <span class="at">geom =</span> <span class="st">"raster"</span>, </span>
-<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>              <span class="at">interpolate =</span> <span class="cn">TRUE</span>, </span>
-<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>              <span class="at">drop =</span> <span class="cn">FALSE</span>) <span class="sc">+</span> </span>
-<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">lims</span>(<span class="at">y =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="sc">-</span><span class="dv">2</span>), <span class="at">x =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">1.5</span>, <span class="fl">1.5</span>)) <span class="sc">+</span> </span>
-<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>  <span class="co">#theme_void() + </span></span>
-<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>) <span class="sc">+</span></span>
-<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_equal</span>() <span class="sc">+</span> </span>
-<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_gradientn</span>(<span class="at">colors =</span> <span class="fu">c</span>(<span class="st">"black"</span>,<span class="st">"red"</span>),</span>
-<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>                       <span class="at">na.value =</span> <span class="st">"black"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>An initial quick method is to sample points from a regularly spaced grid, the same as calculating values for the Mandelbrot set. The results shown below worked well aside from a visual artifact that arose from the initial grid.</p>
+<div class="cell" data-hash="Buddhabrot-Set-Writeup_cache/html/grid_beaeac554bf88d179f558a7ec83968ad">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="sc">-</span><span class="dv">2</span>, <span class="dv">1</span>, <span class="at">length.out =</span> <span class="dv">1000</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="sc">-</span><span class="fl">1.5</span>, <span class="fl">1.5</span>, <span class="at">length.out =</span> <span class="dv">1000</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="sc">!</span><span class="fu">file.exists</span>(<span class="st">"BBdata/grid_sampling.csv"</span>)){</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  cgrid <span class="ot">&lt;-</span> <span class="fu">expand.grid</span>(x, y<span class="sc">*</span>1i) <span class="co"># expands x and y to 1000 x 1000 grid</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  v1 <span class="ot">&lt;-</span> cgrid<span class="sc">$</span>Var1<span class="sc">+</span>cgrid<span class="sc">$</span>Var2</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  zgrid <span class="ot">&lt;-</span> <span class="fu">unlist</span>(<span class="fu">pblapply</span>(<span class="at">X =</span> v1, <span class="at">FUN =</span> trajectory, <span class="at">maxiter =</span> <span class="dv">10</span>), <span class="at">use.names =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  data2 <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> <span class="fu">Re</span>(zgrid), <span class="at">y =</span> <span class="fu">Im</span>(zgrid))</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">write_csv</span>(data2, <span class="st">"BBdata/grid_sampling.csv"</span>)</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Sampling grid of complex plane same way as done in Mandelbrot set generation</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Problem noticed that it creates a regular grid of points on output trajectory. </span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>data2 <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"BBdata/grid_sampling.csv"</span>, <span class="at">show_col_types =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(<span class="at">data =</span> data2, <span class="fu">aes</span>(<span class="at">x=</span>y, <span class="at">y=</span>x, <span class="at">fill =</span> <span class="fu">after_stat</span>(<span class="sc">-</span><span class="fu">log</span>(density)<span class="sc">/</span><span class="fu">max</span>(<span class="fu">log</span>(density))))) <span class="sc">+</span> </span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_bin_2d</span>(</span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>    <span class="at">bins =</span> <span class="fu">c</span>(<span class="fu">length</span>(x), <span class="fu">length</span>(y)), </span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>              <span class="at">geom =</span> <span class="st">"raster"</span>, </span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>              <span class="at">interpolate =</span> <span class="cn">TRUE</span>, </span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>              <span class="at">drop =</span> <span class="cn">FALSE</span>) <span class="sc">+</span> </span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">lims</span>(<span class="at">y =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="sc">-</span><span class="dv">2</span>), <span class="at">x =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">1.5</span>, <span class="fl">1.5</span>)) <span class="sc">+</span> </span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>  <span class="co">#theme_void() + </span></span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>) <span class="sc">+</span></span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_equal</span>() <span class="sc">+</span> </span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_gradientn</span>(<span class="at">colors =</span> <span class="fu">c</span>(<span class="st">"black"</span>,<span class="st">"red"</span>),</span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a>                       <span class="at">na.value =</span> <span class="st">"black"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="Buddhabrot-Set-Writeup_files/figure-html/grid-1.png" class="img-fluid" width="672"></p>
+</div>
 </div>
 </section>
 <section id="random-sampling" class="level2">
 <h2 class="anchored" data-anchor-id="random-sampling">Random sampling</h2>
-<p>In the above resource, they discussed random sampling of points from a circle of radius 2 in the complex plane. To speed it up, I included two helper functions that exclude points that are easily computed as part of the mandelbrot set (main bulb and secondary bulb).</p>
-<div class="cell" data-hash="Buddhabrot-Set-Writeup_cache/html/unnamed-chunk-3_6782dec2d3c4f68e1284e534e913992e">
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="do">############## Alternative method to . </span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Finds points known to be in the main cardioid of mandelbrot set</span></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>in_main_cardioid <span class="ot">&lt;-</span> <span class="cf">function</span>(c) {</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  q <span class="ot">&lt;-</span> (<span class="fu">Re</span>(c) <span class="sc">-</span> <span class="dv">1</span><span class="sc">/</span><span class="dv">4</span>)<span class="sc">^</span><span class="dv">2</span> <span class="sc">+</span> <span class="fu">Im</span>(c)<span class="sc">^</span><span class="dv">2</span></span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  q<span class="sc">*</span>(q <span class="sc">+</span> (<span class="fu">Re</span>(c) <span class="sc">-</span> <span class="dv">1</span><span class="sc">/</span><span class="dv">4</span>)) <span class="sc">&lt;=</span> <span class="fu">Im</span>(c)<span class="sc">^</span><span class="dv">2</span> <span class="sc">/</span><span class="dv">4</span></span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Find points in period 2 bulb of mandelbrot set</span></span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>in_period2bulb <span class="ot">&lt;-</span> <span class="cf">function</span>(c) {</span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>  (<span class="fu">Re</span>(c) <span class="sc">+</span> <span class="dv">1</span>)<span class="sc">^</span><span class="dv">2</span> <span class="sc">+</span> <span class="fu">Im</span>(c)<span class="sc">^</span><span class="dv">2</span> <span class="sc">&lt;=</span> <span class="dv">1</span><span class="sc">/</span><span class="dv">16</span></span>
-<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Sample complex numbers randomly from circle in complex plane radius 2</span></span>
-<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Square root of radius gives uniform sampling over circle. </span></span>
-<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>uniform_sampling <span class="ot">&lt;-</span> <span class="cf">function</span>() {</span>
-<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>  c <span class="ot">&lt;-</span> <span class="dv">0</span></span>
-<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>  <span class="cf">while</span> (<span class="fu">in_main_cardioid</span>(c) <span class="sc">|</span> <span class="fu">in_period2bulb</span>(c)) {</span>
-<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Random radius 0 to 2, random angle -pi to pi times i</span></span>
-<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>    c <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fu">runif</span>(<span class="dv">1</span>,<span class="dv">0</span>,<span class="dv">4</span>)) <span class="sc">*</span> <span class="fu">exp</span>(<span class="fu">runif</span>(<span class="dv">1</span>, <span class="sc">-</span>pi, pi)<span class="sc">*</span>1i)</span>
-<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>  c</span>
-<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a><span class="co"># Sample as above, but with radius 3</span></span>
-<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>uniform_sampling3 <span class="ot">&lt;-</span> <span class="cf">function</span>() {</span>
-<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>  c <span class="ot">&lt;-</span> <span class="dv">0</span></span>
-<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a>  <span class="cf">while</span> (<span class="fu">in_main_cardioid</span>(c) <span class="sc">|</span> <span class="fu">in_period2bulb</span>(c)) {</span>
-<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Random radius 0 to 3, random angle -pi to pi times i</span></span>
-<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a>    c <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fu">runif</span>(<span class="dv">1</span>,<span class="dv">0</span>,<span class="dv">9</span>)) <span class="sc">*</span> <span class="fu">exp</span>(<span class="fu">runif</span>(<span class="dv">1</span>, <span class="sc">-</span>pi, pi)<span class="sc">*</span>1i)</span>
-<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a>  c</span>
-<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-34"><a href="#cb7-34" aria-hidden="true" tabindex="-1"></a>uniform_sampling_v <span class="ot">&lt;-</span> <span class="fu">replicate</span>(<span class="dv">1000000</span>, <span class="fu">uniform_sampling3</span>())</span>
-<span id="cb7-35"><a href="#cb7-35" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-36"><a href="#cb7-36" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(pbapply)</span>
-<span id="cb7-37"><a href="#cb7-37" aria-hidden="true" tabindex="-1"></a>zs <span class="ot">&lt;-</span> <span class="fu">unlist</span>(<span class="fu">pblapply</span>(<span class="at">X =</span> uniform_sampling_v, </span>
-<span id="cb7-38"><a href="#cb7-38" aria-hidden="true" tabindex="-1"></a>                    <span class="at">FUN =</span> trajectory, </span>
-<span id="cb7-39"><a href="#cb7-39" aria-hidden="true" tabindex="-1"></a>                    <span class="at">maxiter =</span> <span class="dv">10</span>), <span class="at">use.names =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb7-40"><a href="#cb7-40" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-41"><a href="#cb7-41" aria-hidden="true" tabindex="-1"></a>data2 <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> <span class="fu">Re</span>(zs), <span class="at">y =</span> <span class="fu">Im</span>(zs))</span>
-<span id="cb7-42"><a href="#cb7-42" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-43"><a href="#cb7-43" aria-hidden="true" tabindex="-1"></a>binsize <span class="ot">=</span> <span class="dv">300</span></span>
-<span id="cb7-44"><a href="#cb7-44" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(<span class="at">data =</span> data2, <span class="fu">aes</span>(<span class="at">x=</span>y, <span class="at">y=</span>x)) <span class="sc">+</span> </span>
-<span id="cb7-45"><a href="#cb7-45" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_bin_2d</span>(</span>
-<span id="cb7-46"><a href="#cb7-46" aria-hidden="true" tabindex="-1"></a>    <span class="at">bins =</span> <span class="fu">c</span>(binsize, binsize), </span>
-<span id="cb7-47"><a href="#cb7-47" aria-hidden="true" tabindex="-1"></a>    <span class="at">geom =</span> <span class="st">"raster"</span>, </span>
-<span id="cb7-48"><a href="#cb7-48" aria-hidden="true" tabindex="-1"></a>    <span class="at">interpolate =</span> <span class="cn">TRUE</span>, </span>
-<span id="cb7-49"><a href="#cb7-49" aria-hidden="true" tabindex="-1"></a>    <span class="at">drop =</span> <span class="cn">FALSE</span>) <span class="sc">+</span> </span>
-<span id="cb7-50"><a href="#cb7-50" aria-hidden="true" tabindex="-1"></a>  <span class="fu">lims</span>(<span class="at">y =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="sc">-</span><span class="dv">2</span>), <span class="at">x =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">1.5</span>, <span class="fl">1.5</span>)) <span class="sc">+</span> </span>
-<span id="cb7-51"><a href="#cb7-51" aria-hidden="true" tabindex="-1"></a>  <span class="co">#theme_void() + </span></span>
-<span id="cb7-52"><a href="#cb7-52" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>) <span class="sc">+</span></span>
-<span id="cb7-53"><a href="#cb7-53" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_equal</span>() <span class="sc">+</span> </span>
-<span id="cb7-54"><a href="#cb7-54" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_gradientn</span>(<span class="at">colors =</span> <span class="fu">c</span>(<span class="st">"black"</span>,<span class="st">"red"</span>),</span>
-<span id="cb7-55"><a href="#cb7-55" aria-hidden="true" tabindex="-1"></a>                       <span class="at">na.value =</span> <span class="st">"black"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: Removed 2133072 rows containing non-finite values (`stat_bin2d()`).</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: Removed 1196 rows containing missing values (`geom_raster()`).</code></pre>
-</div>
+<p>In the “Scientific Computing on a Laptop”, an alternate method was explored for picking points - sampling of points from a circle of radius 2 in the complex plane. To speed the algorithm it up, I included two helper functions that exclude points that are computed as part of the Mandelbrot set, the main bulb and secondary bulb of the set. The relationship that the functions use was detailed in the same source.</p>
+<div class="cell" data-hash="Buddhabrot-Set-Writeup_cache/html/random sampling_5d3f6194b579a129b8d9c73383fe9591">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="do">############## Alternative method to . </span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Finds points known to be in the main cardioid of mandelbrot set</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>in_main_cardioid <span class="ot">&lt;-</span> <span class="cf">function</span>(c) {</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  q <span class="ot">&lt;-</span> (<span class="fu">Re</span>(c) <span class="sc">-</span> <span class="dv">1</span><span class="sc">/</span><span class="dv">4</span>)<span class="sc">^</span><span class="dv">2</span> <span class="sc">+</span> <span class="fu">Im</span>(c)<span class="sc">^</span><span class="dv">2</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  q<span class="sc">*</span>(q <span class="sc">+</span> (<span class="fu">Re</span>(c) <span class="sc">-</span> <span class="dv">1</span><span class="sc">/</span><span class="dv">4</span>)) <span class="sc">&lt;=</span> <span class="fu">Im</span>(c)<span class="sc">^</span><span class="dv">2</span> <span class="sc">/</span><span class="dv">4</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Find points in period 2 bulb of mandelbrot set</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>in_period2bulb <span class="ot">&lt;-</span> <span class="cf">function</span>(c) {</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>  (<span class="fu">Re</span>(c) <span class="sc">+</span> <span class="dv">1</span>)<span class="sc">^</span><span class="dv">2</span> <span class="sc">+</span> <span class="fu">Im</span>(c)<span class="sc">^</span><span class="dv">2</span> <span class="sc">&lt;=</span> <span class="dv">1</span><span class="sc">/</span><span class="dv">16</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Sample complex numbers randomly from circle in complex plane radius default 2</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>uniform_sampling <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">radius =</span> <span class="dv">2</span>) {</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>  c <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>  <span class="cf">while</span> (<span class="fu">in_main_cardioid</span>(c) <span class="sc">|</span> <span class="fu">in_period2bulb</span>(c)) {</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Random radius 0 to radius, random angle -pi to pi times i</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Square root of radius gives uniform sampling over circle. </span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>    c <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fu">runif</span>(<span class="dv">1</span>,<span class="dv">0</span>,radius<span class="sc">^</span><span class="dv">2</span>)) <span class="sc">*</span> <span class="fu">exp</span>(<span class="fu">runif</span>(<span class="dv">1</span>, <span class="sc">-</span>pi, pi)<span class="sc">*</span>1i)</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>  c</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="sc">!</span><span class="fu">file.exists</span>(<span class="st">"BBdata/zs.csv"</span>)) {</span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Sample points; more replications = better picture + longer compute time</span></span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>  uniform_sampling_v <span class="ot">&lt;-</span> <span class="fu">replicate</span>(<span class="dv">10000000</span>, <span class="fu">uniform_sampling</span>(<span class="at">radius =</span> <span class="dv">3</span>))</span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Due to length that this takes, a progress bar on lapply is useful</span></span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>  zs <span class="ot">&lt;-</span> <span class="fu">unlist</span>(<span class="fu">pblapply</span>(<span class="at">X =</span> uniform_sampling_v, </span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>                        <span class="at">FUN =</span> trajectory, </span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>                        <span class="at">maxiter =</span> <span class="dv">100</span>), <span class="at">use.names =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>  real_zs <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> <span class="fu">Re</span>(zs), <span class="at">y =</span> <span class="fu">Im</span>(zs))</span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>  <span class="fu">write_csv</span>(real_zs, <span class="st">"BBdata/zs.csv"</span>)</span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>zs <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"BBdata/zs.csv"</span>, <span class="at">show_col_types =</span> <span class="cn">FALSE</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">zs =</span> <span class="fu">complex</span>(<span class="at">real =</span> x, <span class="at">imaginary =</span> y), <span class="at">.keep =</span> <span class="st">"none"</span>)</span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>binsize <span class="ot">=</span> <span class="dv">700</span></span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(<span class="at">data =</span> <span class="fu">data.frame</span>(zs), <span class="fu">aes</span>(<span class="at">x=</span><span class="fu">Im</span>(zs), <span class="at">y=</span><span class="fu">Re</span>(zs), </span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a>                                  <span class="at">fill =</span> <span class="fu">after_stat</span>(<span class="sc">-</span><span class="fu">log</span>(density)<span class="sc">/</span><span class="fu">max</span>(<span class="fu">log</span>(density))))) <span class="sc">+</span> </span>
+<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_bin_2d</span>(</span>
+<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a>    <span class="at">bins =</span> <span class="fu">c</span>(binsize, binsize), </span>
+<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a>    <span class="at">geom =</span> <span class="st">"raster"</span>, </span>
+<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a>    <span class="at">interpolate =</span> <span class="cn">TRUE</span>, </span>
+<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a>    <span class="at">drop =</span> <span class="cn">FALSE</span>) <span class="sc">+</span> </span>
+<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a>  <span class="fu">lims</span>(<span class="at">y =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="sc">-</span><span class="dv">2</span>), <span class="at">x =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">1.5</span>, <span class="fl">1.5</span>)) <span class="sc">+</span> </span>
+<span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a>  <span class="co">#theme_void() + </span></span>
+<span id="cb3-50"><a href="#cb3-50" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>) <span class="sc">+</span></span>
+<span id="cb3-51"><a href="#cb3-51" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_equal</span>() <span class="sc">+</span> </span>
+<span id="cb3-52"><a href="#cb3-52" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_gradientn</span>(<span class="at">colors =</span> <span class="fu">c</span>(<span class="st">"black"</span>,<span class="st">"red"</span>),</span>
+<span id="cb3-53"><a href="#cb3-53" aria-hidden="true" tabindex="-1"></a>                       <span class="at">na.value =</span> <span class="st">"black"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 <div class="cell-output-display">
-<p><img src="Buddhabrot-Set-Writeup_files/figure-html/unnamed-chunk-3-1.png" class="img-fluid" width="672"></p>
+<p><img src="Buddhabrot-Set-Writeup_files/figure-html/random%20sampling-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
-<p>I was much more pleased with this iteration of the function and was happy to leave it here as I worked on coloring next. I’ll explore a more robust method later where you can only include points that diverge slowly as this will help give more information on escape trajectories.</p>
+<p>I was much more pleased with this iteration of the function and was happy to leave it here as I worked on coloring next.</p>
 </section>
 <section id="color-channels" class="level2">
 <h2 class="anchored" data-anchor-id="color-channels">Color channels</h2>
-<p>To color the buddhabrot, the prior iterations used ggplot’s ability to do 2d binning and color each point by it’s count. A more interesting method is to run the simulation three times with different <code>maxiter</code> values and use these to color rgb channels.</p>
-<div class="cell" data-hash="Buddhabrot-Set-Writeup_cache/html/unnamed-chunk-4_8bbcccd28bd280da8915c7bff876f19f">
-<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="do">##### COLOR CHANNELS</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>uniform_sampling_v <span class="ot">&lt;-</span> <span class="fu">replicate</span>(<span class="dv">100000</span>, <span class="fu">uniform_sampling3</span>())</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>zs <span class="ot">&lt;-</span> <span class="fu">unlist</span>(<span class="fu">lapply</span>(<span class="at">X =</span> uniform_sampling_v, </span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>                    <span class="at">FUN =</span> trajectory, </span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>                    <span class="at">maxiter =</span> <span class="dv">10</span>), <span class="at">use.names =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>zs1 <span class="ot">&lt;-</span> <span class="fu">unlist</span>(<span class="fu">lapply</span>(<span class="at">X =</span> uniform_sampling_v, </span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>                    <span class="at">FUN =</span> trajectory, </span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>                    <span class="at">maxiter =</span> <span class="dv">10</span>), <span class="at">use.names =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>zs1data <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> <span class="fu">Re</span>(zs1), <span class="at">y =</span> <span class="fu">Im</span>(zs1))</span>
-<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>zs2 <span class="ot">&lt;-</span> <span class="fu">unlist</span>(<span class="fu">lapply</span>(<span class="at">X =</span> uniform_sampling_v, </span>
-<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>                    <span class="at">FUN =</span> trajectory, </span>
-<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>                    <span class="at">maxiter =</span> <span class="dv">100</span>), <span class="at">use.names =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>zs2data <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> <span class="fu">Re</span>(zs2), <span class="at">y =</span> <span class="fu">Im</span>(zs2))</span>
-<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>zs3 <span class="ot">&lt;-</span> <span class="fu">unlist</span>(<span class="fu">lapply</span>(<span class="at">X =</span> uniform_sampling_v, </span>
-<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>                    <span class="at">FUN =</span> trajectory, </span>
-<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>                    <span class="at">maxiter =</span> <span class="dv">1000</span>), <span class="at">use.names =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>zs3data <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> <span class="fu">Re</span>(zs3), <span class="at">y =</span> <span class="fu">Im</span>(zs3))</span>
-<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a>ch1 <span class="ot">&lt;-</span> <span class="fu">bin2</span>(<span class="fu">data.matrix</span>(zs1data), </span>
-<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a>            <span class="fu">matrix</span>( <span class="fu">c</span>(<span class="sc">-</span><span class="dv">2</span>,<span class="sc">-</span><span class="dv">2</span>,<span class="dv">1</span>,<span class="dv">2</span>), <span class="dv">2</span>, <span class="dv">2</span>), </span>
-<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a>            <span class="at">nbin =</span> <span class="fu">c</span>(<span class="dv">300</span>,<span class="dv">300</span>))<span class="sc">$</span>nc</span>
-<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a>ch2 <span class="ot">&lt;-</span> <span class="fu">bin2</span>(<span class="fu">data.matrix</span>(zs2data), </span>
-<span id="cb10-27"><a href="#cb10-27" aria-hidden="true" tabindex="-1"></a>            <span class="fu">matrix</span>( <span class="fu">c</span>(<span class="sc">-</span><span class="dv">2</span>,<span class="sc">-</span><span class="dv">2</span>,<span class="dv">1</span>,<span class="dv">2</span>), <span class="dv">2</span>, <span class="dv">2</span>), </span>
-<span id="cb10-28"><a href="#cb10-28" aria-hidden="true" tabindex="-1"></a>            <span class="at">nbin =</span> <span class="fu">c</span>(<span class="dv">300</span>,<span class="dv">300</span>))<span class="sc">$</span>nc</span>
-<span id="cb10-29"><a href="#cb10-29" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-30"><a href="#cb10-30" aria-hidden="true" tabindex="-1"></a>ch3 <span class="ot">&lt;-</span> <span class="fu">bin2</span>(<span class="fu">data.matrix</span>(zs3data), </span>
-<span id="cb10-31"><a href="#cb10-31" aria-hidden="true" tabindex="-1"></a>            <span class="fu">matrix</span>( <span class="fu">c</span>(<span class="sc">-</span><span class="dv">2</span>,<span class="sc">-</span><span class="dv">2</span>,<span class="dv">1</span>,<span class="dv">2</span>), <span class="dv">2</span>, <span class="dv">2</span>), </span>
-<span id="cb10-32"><a href="#cb10-32" aria-hidden="true" tabindex="-1"></a>            <span class="at">nbin =</span> <span class="fu">c</span>(<span class="dv">300</span>,<span class="dv">300</span>))<span class="sc">$</span>nc</span>
-<span id="cb10-33"><a href="#cb10-33" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-34"><a href="#cb10-34" aria-hidden="true" tabindex="-1"></a>col1 <span class="ot">&lt;-</span> <span class="fu">rgb</span>(ch1<span class="sc">/</span><span class="fu">max</span>(ch1), ch2<span class="sc">/</span><span class="fu">max</span>(ch2), ch3<span class="sc">/</span><span class="fu">max</span>(ch3))</span>
-<span id="cb10-35"><a href="#cb10-35" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-36"><a href="#cb10-36" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(<span class="at">data =</span> <span class="fu">expand.grid</span>(<span class="at">x =</span> <span class="fu">seq</span>(<span class="sc">-</span><span class="dv">2</span>, <span class="dv">1</span>, <span class="at">length.out =</span> <span class="dv">300</span>), </span>
-<span id="cb10-37"><a href="#cb10-37" aria-hidden="true" tabindex="-1"></a>                          <span class="at">y =</span> <span class="fu">seq</span>(<span class="sc">-</span><span class="dv">2</span>, <span class="dv">2</span>, <span class="at">length.out =</span> <span class="dv">300</span>)), <span class="fu">aes</span>(y, <span class="sc">-</span>x)) <span class="sc">+</span> </span>
-<span id="cb10-38"><a href="#cb10-38" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_raster</span>(<span class="at">fill =</span> col1, <span class="at">interpolate =</span> <span class="cn">TRUE</span>) <span class="sc">+</span> </span>
-<span id="cb10-39"><a href="#cb10-39" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_fixed</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>To color the Buddhabrot, the prior iterations used ggplot’s ability to do 2d binning and color each point by it’s count. The advantage of this is that the computation is a straightforward mapping of count to color.<br>
+A variant method often called the Nebulabrot is to include multiple color channels where points are colored by a combination of R, G, and B. The three color levels are still determined by 2d binning but each channel’s levels are determined by a different cutoff for max iterations. One possible example is the RGB channels have max iteration cutoffs of 2000, 200, and 20 respectively.<br>
+The following code:</p>
+<ul>
+<li><p>Samples one million points from a circle of radius 2 in the complex plane</p></li>
+<li><p>Calculates the trajectory of each of these with a max length of 2000 points</p></li>
+<li><p>Creates a dataframe of the points</p></li>
+<li><p>And finally splits the dataframe into three channels:</p>
+<ul>
+<li><p>The blue channel includes max lengths of 20 or less</p></li>
+<li><p>The green channel includes max length of 21 to 200</p></li>
+<li><p>And the red channel includes max length of 201 to 2000</p></li>
+</ul></li>
+</ul>
+<div class="cell" data-hash="Buddhabrot-Set-Writeup_cache/html/initial sampling_e41fc4d61538971f6c8392f411247b58">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># generate initial sampling of points</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="sc">!</span><span class="fu">file.exists</span>(<span class="st">"NBdata/sample_points.csv"</span>)) {</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  sample1 <span class="ot">&lt;-</span> <span class="fu">replicate</span>(<span class="dv">1000000</span>, <span class="fu">uniform_sampling</span>(<span class="at">radius =</span> <span class="dv">2</span>))</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">write_csv</span>(<span class="fu">data.frame</span>(<span class="at">x =</span> <span class="fu">Re</span>(sample1), </span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>                       <span class="at">y =</span> <span class="fu">Im</span>(sample1)), <span class="st">"NBdata/sample_points.csv"</span>)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Helper function to find first element of each list, returns 0 if NULL</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>first_element <span class="ot">&lt;-</span> <span class="cf">function</span>(x) {</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.null</span>(x)) {</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    x[[<span class="dv">1</span>]]</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    <span class="dv">0</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a><span class="co"># find trajectories with max iterations of 2000</span></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="sc">!</span><span class="fu">file.exists</span>(<span class="st">"NBdata/trajectory2000.csv"</span>)) {</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>  sample1 <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"NBdata/sample_points.csv"</span>, </span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>                      <span class="at">show_col_types =</span> <span class="cn">FALSE</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">zs =</span> <span class="fu">complex</span>(<span class="at">real =</span> x, <span class="at">imaginary =</span> y), </span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>           <span class="at">.keep =</span> <span class="st">"none"</span>)</span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>  zs <span class="ot">&lt;-</span> <span class="fu">pblapply</span>(<span class="at">X =</span> sample1, </span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>                 <span class="at">FUN =</span> trajectory, </span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>                 <span class="at">maxiter =</span> <span class="dv">2000</span>)</span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Find length of each trajectory</span></span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>  zs_length <span class="ot">&lt;-</span> <span class="fu">sapply</span>(zs, length)</span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a>  start_point <span class="ot">&lt;-</span> <span class="fu">sapply</span>(zs, first_element)</span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a>  <span class="co"># create dataframe to include: initial point, path that point follows, and length of trajectory</span></span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a>  zs_df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">initial =</span> <span class="fu">rep</span>(start_point, </span>
+<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a>                                    <span class="at">times =</span> zs_length), </span>
+<span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a>                      <span class="at">path_point =</span> <span class="fu">unlist</span>(zs), </span>
+<span id="cb4-36"><a href="#cb4-36" aria-hidden="true" tabindex="-1"></a>                      <span class="at">length =</span> <span class="fu">rep</span>(zs_length, <span class="at">times =</span> zs_length))</span>
+<span id="cb4-37"><a href="#cb4-37" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb4-38"><a href="#cb4-38" aria-hidden="true" tabindex="-1"></a>  unlist_zs <span class="ot">&lt;-</span> <span class="fu">unlist</span>(zstst)</span>
+<span id="cb4-39"><a href="#cb4-39" aria-hidden="true" tabindex="-1"></a>  real_zs <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> <span class="fu">Re</span>(unlist_zs), <span class="at">y =</span> <span class="fu">Im</span>(unlist_zs))</span>
+<span id="cb4-40"><a href="#cb4-40" aria-hidden="true" tabindex="-1"></a>  <span class="fu">write.csv</span>(zs_df, <span class="st">"NBdata/trajectory2000.csv"</span>, <span class="at">row.names =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb4-41"><a href="#cb4-41" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb4-42"><a href="#cb4-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-43"><a href="#cb4-43" aria-hidden="true" tabindex="-1"></a>zs_df <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"NBdata/trajectory2000.csv"</span>)</span>
+<span id="cb4-44"><a href="#cb4-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-45"><a href="#cb4-45" aria-hidden="true" tabindex="-1"></a><span class="co"># Extract points in channels by iteration length: 20, 200, 2000</span></span>
+<span id="cb4-46"><a href="#cb4-46" aria-hidden="true" tabindex="-1"></a>channel20 <span class="ot">&lt;-</span> zs_df[<span class="fu">which</span>(zs_df<span class="sc">$</span>length <span class="sc">&lt;=</span> <span class="dv">20</span>),]</span>
+<span id="cb4-47"><a href="#cb4-47" aria-hidden="true" tabindex="-1"></a>channel200 <span class="ot">&lt;-</span> zs_df[<span class="fu">which</span>(zs_df<span class="sc">$</span>length <span class="sc">&gt;</span> <span class="dv">20</span> <span class="sc">&amp;</span> zs_df<span class="sc">$</span>length <span class="sc">&lt;=</span> <span class="dv">200</span>),]</span>
+<span id="cb4-48"><a href="#cb4-48" aria-hidden="true" tabindex="-1"></a>channel2000 <span class="ot">&lt;-</span> zs_df[<span class="fu">which</span>(zs_df<span class="sc">$</span>length <span class="sc">&gt;</span> <span class="dv">200</span>),]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<section id="increase-channel-size" class="level3">
+<h3 class="anchored" data-anchor-id="increase-channel-size">Increase Channel Size</h3>
+<p>Currently the 200 and 2000 channels are sparse as a random sampling of a millions points will find mostly low path length trajectories. To efficiently add additional points, the existing points can have a mutate function applied to them that moves their initial coordinate slightly and recalculates the trajectory. With initially high trajectory lengths, these mutated points are also likely to have long trajectories. If the new trajectory is also the right length, it will be added to the channel.<br>
+To mutate a point, the <code>uniform_mutate</code> function takes an input point and adds a random complex number to it and takes a parameter of radius so points further or nearer can be considered.<br>
+To mutate the channel, the <code>mutate_channel</code> function takes a desired channel, a desired number of points in the channel, and the same radius argument as <code>uniform_mutate</code>. The function then randomly picks a start point, mutates it, finds it’s trajectory, and if it’s in the right length range adds it to the channel.</p>
+<div class="cell" data-hash="Buddhabrot-Set-Writeup_cache/html/mutate channels_f0d54bfc694ab76e31bb77eee0d7b5eb">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Helper to add a random complex number to a point</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>uniform_mutate <span class="ot">&lt;-</span> <span class="cf">function</span>(c, <span class="at">radius =</span> .<span class="dv">001</span>) {</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>      c <span class="sc">+</span> <span class="fu">sqrt</span>(<span class="fu">runif</span>(<span class="dv">1</span>,<span class="dv">0</span>,radius<span class="sc">^</span><span class="dv">2</span>)) <span class="sc">*</span> <span class="fu">exp</span>(<span class="fu">runif</span>(<span class="dv">1</span>, <span class="sc">-</span>pi, pi)<span class="sc">*</span>1i)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Helper to mutate a point, compute it's trajectory, and if it's length is correct add it to the channel. Accepts maxlength argument and will add new trajectories up till this new max channel size is reached. </span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>mutate_channel <span class="ot">&lt;-</span> <span class="cf">function</span>(channel, maxlength, <span class="at">radius =</span> .<span class="dv">001</span>) {</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  cname <span class="ot">&lt;-</span> <span class="fu">deparse</span>(<span class="fu">substitute</span>(channel)) <span class="co"># get channel name</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  max_iteration <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(stringr<span class="sc">::</span><span class="fu">str_extract</span>(cname, <span class="st">"[0-9]+"</span>)) <span class="co">#extract max iterations from channel name</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>  c_length <span class="ot">&lt;-</span> <span class="fu">nrow</span>(channel) <span class="co"># initial length of channel</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>  todo <span class="ot">&lt;-</span> maxlength <span class="sc">-</span> <span class="fu">nrow</span>(channel) <span class="co"># how many additional points needed</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>  <span class="co"># while length of channel is less than target length</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>  <span class="cf">while</span>(c_length <span class="sc">&lt;</span> maxlength) {</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>    rstart <span class="ot">&lt;-</span> <span class="fu">sample</span>(channel<span class="sc">$</span>initial, <span class="dv">1</span>) <span class="co">#random start point from channel</span></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>    new <span class="ot">&lt;-</span> <span class="fu">trajectory</span>(<span class="fu">uniform_mutate</span>(rstart, radius), <span class="at">maxiter =</span> <span class="dv">2000</span>) <span class="co"># new trajectory</span></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>    <span class="co"># keep point if trajectory length is in desired range</span></span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span>((<span class="fu">length</span>(new) <span class="sc">&lt;=</span> max_iteration) <span class="sc">&amp;</span> (<span class="fu">length</span>(new) <span class="sc">&gt;</span> max_iteration<span class="sc">/</span><span class="dv">10</span>)) {</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>      new_df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">initial =</span> rstart, </span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>                 <span class="at">path_point =</span> new, </span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>                 <span class="at">length =</span> <span class="fu">length</span>(new))</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>      channel <span class="ot">&lt;-</span> <span class="fu">rbind</span>(channel, new_df)</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>      c_length <span class="ot">&lt;-</span> <span class="fu">nrow</span>(channel)</span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>      remaining <span class="ot">&lt;-</span> maxlength <span class="sc">-</span> <span class="fu">nrow</span>(channel)</span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>      </span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>      <span class="fu">cat</span>(<span class="st">'</span><span class="sc">\014</span><span class="st">'</span>) <span class="co">#clear console</span></span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>      <span class="co"># Print progress</span></span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>      <span class="fu">cat</span>(<span class="st">"Added trajectory of length"</span>, <span class="fu">length</span>(new), </span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>          <span class="st">"</span><span class="sc">\n</span><span class="st">Percent done:"</span>, <span class="fu">round</span>((todo <span class="sc">-</span> remaining)<span class="sc">/</span>todo<span class="sc">*</span><span class="dv">100</span>, <span class="dv">2</span>))</span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a>  channel</span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a><span class="co"># Apply mutation to channel and save </span></span>
+<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a><span class="co"># Save data! I lost the run once and it was another long simulation to retrieve it. </span></span>
+<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readr)</span>
+<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="sc">!</span><span class="fu">file.exists</span>(<span class="st">"NBdata/sample_points.csv"</span>)) {</span>
+<span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a>  <span class="fu">write.csv</span>(<span class="fu">data.frame</span>(<span class="at">x =</span> <span class="fu">Re</span>(uniform_sampling_v), </span>
+<span id="cb5-41"><a href="#cb5-41" aria-hidden="true" tabindex="-1"></a>                       <span class="at">y =</span> <span class="fu">Im</span>(uniform_sampling_v)), <span class="at">row.names =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb5-42"><a href="#cb5-42" aria-hidden="true" tabindex="-1"></a>            <span class="st">"NBdata/sample_points.csv"</span>)</span>
+<span id="cb5-43"><a href="#cb5-43" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb5-44"><a href="#cb5-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-45"><a href="#cb5-45" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="sc">!</span><span class="fu">file.exists</span>(<span class="st">"NBdata/channel20.csv"</span>)) {</span>
+<span id="cb5-46"><a href="#cb5-46" aria-hidden="true" tabindex="-1"></a>  <span class="fu">write.csv</span>(channel20, <span class="st">"NBdata/channel20.csv"</span>, <span class="at">row.names =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb5-47"><a href="#cb5-47" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb5-48"><a href="#cb5-48" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="sc">!</span><span class="fu">file.exists</span>(<span class="st">"NBdata/channel200.csv"</span>)) {</span>
+<span id="cb5-49"><a href="#cb5-49" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-50"><a href="#cb5-50" aria-hidden="true" tabindex="-1"></a>  channel200 <span class="ot">&lt;-</span> <span class="fu">mutate_channel</span>(channel200, <span class="dv">1000000</span>, .<span class="dv">01</span>)</span>
+<span id="cb5-51"><a href="#cb5-51" aria-hidden="true" tabindex="-1"></a>  <span class="fu">write.csv</span>(channel200, <span class="st">"NBdata/channel200.csv"</span>, <span class="at">row.names =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb5-52"><a href="#cb5-52" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb5-53"><a href="#cb5-53" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="sc">!</span><span class="fu">file.exists</span>(<span class="st">"NBdata/channel2000.csv"</span>)) {</span>
+<span id="cb5-54"><a href="#cb5-54" aria-hidden="true" tabindex="-1"></a>  channel2000 <span class="ot">&lt;-</span> <span class="fu">mutate_channel</span>(channel2000, <span class="dv">1000000</span>, .<span class="dv">01</span>)</span>
+<span id="cb5-55"><a href="#cb5-55" aria-hidden="true" tabindex="-1"></a>  <span class="fu">write.csv</span>(channel2000, <span class="st">"NBdata/channel2000.csv"</span>, <span class="at">row.names =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb5-56"><a href="#cb5-56" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb5-57"><a href="#cb5-57" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-58"><a href="#cb5-58" aria-hidden="true" tabindex="-1"></a><span class="co"># Reload saved data</span></span>
+<span id="cb5-59"><a href="#cb5-59" aria-hidden="true" tabindex="-1"></a>channel20 <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"NBdata/channel20.csv"</span>) </span>
+<span id="cb5-60"><a href="#cb5-60" aria-hidden="true" tabindex="-1"></a>channel200 <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"NBdata/channel200.csv"</span>)</span>
+<span id="cb5-61"><a href="#cb5-61" aria-hidden="true" tabindex="-1"></a>channel2000 <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"NBdata/channel2000.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<section id="add-symmetric-points" class="level4">
+<h4 class="anchored" data-anchor-id="add-symmetric-points">Add Symmetric Points</h4>
+<p>The Buddhabrot/Mandelbrot/Nebulabrot functions are all symmetric in the complex plane over the real axis, so another way to get more points is to reflect each point over this axis.</p>
+<div class="cell" data-hash="Buddhabrot-Set-Writeup_cache/html/reflect points_d814767f43b7dd79e3d81d0f3ca4ccf8">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>mutate_reflect <span class="ot">&lt;-</span> <span class="cf">function</span>(channel) {</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  rchannel <span class="ot">&lt;-</span> <span class="fu">mutate</span>(channel, <span class="at">path_point =</span> <span class="fu">Conj</span>(path_point))</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rbind</span>(channel, rchannel)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Apply reflection to channels:</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>channel20 <span class="ot">&lt;-</span> <span class="fu">mutate_reflect</span>(channel20)</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>channel200 <span class="ot">&lt;-</span> <span class="fu">mutate_reflect</span>(channel200)</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>channel2000 <span class="ot">&lt;-</span> <span class="fu">mutate_reflect</span>(channel2000)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+</section>
+</section>
+<section id="visualize-channels" class="level3">
+<h3 class="anchored" data-anchor-id="visualize-channels">Visualize Channels</h3>
+<div class="cell" data-hash="Buddhabrot-Set-Writeup_cache/html/visualize_ed7a1757d05ff4f297f6f79315ab954a">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(<span class="at">data =</span> channel2000, <span class="fu">aes</span>(<span class="at">x=</span><span class="fu">Im</span>(path_point), <span class="at">y=</span><span class="fu">Re</span>(path_point))) <span class="sc">+</span> </span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_bin_2d</span>(</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">bins =</span> <span class="fu">c</span>(<span class="dv">600</span>, <span class="dv">600</span>), </span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>              <span class="at">geom =</span> <span class="st">"raster"</span>, </span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>              <span class="at">interpolate =</span> <span class="cn">TRUE</span>, </span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>              <span class="at">drop =</span> <span class="cn">FALSE</span>) <span class="sc">+</span> </span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">lims</span>(<span class="at">y =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="sc">-</span><span class="dv">2</span>), <span class="at">x =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">1.5</span>, <span class="fl">1.5</span>)) <span class="sc">+</span> </span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>  <span class="co">#theme_void() + </span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">subtitle =</span> <span class="st">"Red Channel: 2000 counts"</span>) <span class="sc">+</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>) <span class="sc">+</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_equal</span>() <span class="sc">+</span> </span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_gradientn</span>(<span class="at">colors =</span> <span class="fu">c</span>(<span class="st">"white"</span>,<span class="st">"red"</span>),</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>                       <span class="at">na.value =</span> <span class="st">"white"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 <div class="cell-output-display">
-<p><img src="Buddhabrot-Set-Writeup_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid" width="672"></p>
+<p><img src="Buddhabrot-Set-Writeup_files/figure-html/visualize-1.png" class="img-fluid" width="672"></p>
+</div>
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(<span class="at">data =</span> channel200, <span class="fu">aes</span>(<span class="at">x=</span><span class="fu">Im</span>(path_point), <span class="at">y=</span><span class="fu">Re</span>(path_point))) <span class="sc">+</span> </span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_bin_2d</span>(</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">bins =</span> <span class="fu">c</span>(<span class="dv">600</span>, <span class="dv">600</span>), </span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>              <span class="at">geom =</span> <span class="st">"raster"</span>, </span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>              <span class="at">interpolate =</span> <span class="cn">TRUE</span>, </span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>              <span class="at">drop =</span> <span class="cn">FALSE</span>) <span class="sc">+</span> </span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">lims</span>(<span class="at">y =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="sc">-</span><span class="dv">2</span>), <span class="at">x =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">1.5</span>, <span class="fl">1.5</span>)) <span class="sc">+</span> </span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  <span class="co">#theme_void() + </span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">subtitle =</span> <span class="st">"Green Channel: 200 counts"</span>) <span class="sc">+</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>) <span class="sc">+</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_equal</span>() <span class="sc">+</span> </span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_gradientn</span>(<span class="at">colors =</span> <span class="fu">c</span>(<span class="st">"white"</span>,<span class="st">"darkgreen"</span>),</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>                       <span class="at">na.value =</span> <span class="st">"white"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="Buddhabrot-Set-Writeup_files/figure-html/visualize-2.png" class="img-fluid" width="672"></p>
+</div>
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(<span class="at">data =</span> channel20, <span class="fu">aes</span>(<span class="at">x=</span><span class="fu">Im</span>(path_point), <span class="at">y=</span><span class="fu">Re</span>(path_point))) <span class="sc">+</span> </span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_bin_2d</span>(</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">bins =</span> <span class="fu">c</span>(<span class="dv">600</span>, <span class="dv">600</span>), </span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>              <span class="at">geom =</span> <span class="st">"raster"</span>, </span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>              <span class="at">interpolate =</span> <span class="cn">TRUE</span>, </span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>              <span class="at">drop =</span> <span class="cn">FALSE</span>) <span class="sc">+</span> </span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">lims</span>(<span class="at">y =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="sc">-</span><span class="dv">2</span>), <span class="at">x =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">1.5</span>, <span class="fl">1.5</span>)) <span class="sc">+</span> </span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>  <span class="co">#theme_void() + </span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">subtitle =</span> <span class="st">"Blue Channel: 20 counts"</span>) <span class="sc">+</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>) <span class="sc">+</span></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_equal</span>() <span class="sc">+</span> </span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_gradientn</span>(<span class="at">colors =</span> <span class="fu">c</span>(<span class="st">"white"</span>,<span class="st">"blue"</span>),</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>                       <span class="at">na.value =</span> <span class="st">"white"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="Buddhabrot-Set-Writeup_files/figure-html/visualize-3.png" class="img-fluid" width="672"></p>
 </div>
 </div>
 </section>
-<section id="long-dwell-time-subset" class="level2">
-<h2 class="anchored" data-anchor-id="long-dwell-time-subset">Long dwell time subset</h2>
-<p>The points that will have the longest trajectories can be classified as of high importance. These high importance points tend to be right at the border of the mandelbrot set. We can’t know these in advance, but if they are recorded as the sets are run then in a subsequent run computation time can be reduced if only a subset of high importance points are included.</p>
-<div class="cell" data-hash="Buddhabrot-Set-Writeup_cache/html/unnamed-chunk-5_8bc76edfc9e6681f17d7329977ae40bd">
-<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>dwelldata_0 <span class="ot">&lt;-</span> <span class="fu">replicate</span>(<span class="dv">1000000</span>, <span class="fu">uniform_sampling</span>())</span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>dwell_traj_0 <span class="ot">&lt;-</span> <span class="fu">lapply</span>(<span class="at">X =</span> dwelldata_0, </span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>                    <span class="at">FUN =</span> trajectory, </span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>                    <span class="at">maxiter =</span> <span class="dv">500</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<p>Find points that had a dwell of 50 or more</p>
-<div class="cell" data-hash="Buddhabrot-Set-Writeup_cache/html/unnamed-chunk-6_22aba20b0318b2ee4a8a0c5bcddc82fd">
-<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>long_dwell <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">point =</span> dwelldata_0, <span class="at">dwell =</span> <span class="fu">unlist</span>(<span class="fu">lapply</span>(dwell_traj_0, length)))</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>long_dwell <span class="ot">&lt;-</span> long_dwell[long_dwell<span class="sc">$</span>dwell <span class="sc">&gt;=</span> <span class="dv">50</span>,]</span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(<span class="fu">Re</span>(long_dwell<span class="sc">$</span>point), <span class="fu">Im</span>(long_dwell<span class="sc">$</span>point), <span class="at">asp =</span> <span class="dv">1</span>, <span class="at">pch =</span> <span class="st">"."</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<section id="coloring" class="level3">
+<h3 class="anchored" data-anchor-id="coloring">Coloring</h3>
+<p>With all the points now added to the channels, they can finally be binned and used to create a unified color channel to pass to ggplot.<br>
+This is accomplished in several steps:</p>
+<ul>
+<li><p>With the helper function <code>bin_channel</code>, the data for each channel is converted to a matrix of counts of <code>pxl</code> by <code>pxl</code> size (default 600 bins)</p></li>
+<li><p>Next the color counts are normalized with <code>normalize_color</code>. This implementation does a log of counts followed by normalizing the range to min 0 and max 1</p></li>
+<li><p>Finally, the three channels are combined with <code>rgb</code></p></li>
+</ul>
+<div class="cell" data-hash="Buddhabrot-Set-Writeup_cache/html/colorized_29f9dd4eab07a963ad888229a24bf719">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>bin_channel <span class="ot">&lt;-</span> <span class="cf">function</span>(channel, <span class="at">pxl =</span> <span class="dv">600</span>) {</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  channel <span class="sc">%&gt;%</span> </span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">x =</span> <span class="fu">Re</span>(path_point), <span class="at">y =</span> <span class="fu">Im</span>(path_point), <span class="at">.keep =</span> <span class="st">"none"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">data.matrix</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">bin2</span>(<span class="fu">matrix</span>(<span class="fu">c</span>(<span class="sc">-</span><span class="dv">2</span>,<span class="sc">-</span><span class="dv">2</span>,<span class="dv">1</span>,<span class="dv">2</span>), <span class="dv">2</span>, <span class="dv">2</span>), </span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>         <span class="at">nbin =</span> <span class="fu">c</span>(pxl,pxl)) <span class="sc">%&gt;%</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    .<span class="sc">$</span>nc</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>chb <span class="ot">&lt;-</span> <span class="fu">bin_channel</span>(channel20)</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>chg <span class="ot">&lt;-</span> <span class="fu">bin_channel</span>(channel200)</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>chr <span class="ot">&lt;-</span> <span class="fu">bin_channel</span>(channel2000)</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>normalize_color <span class="ot">&lt;-</span> <span class="cf">function</span>(col_chan) {</span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>  <span class="co"># if not 0, log transform the bin count</span></span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>  col_chan[<span class="fu">which</span>(col_chan <span class="sc">&gt;</span> <span class="dv">0</span>)] <span class="ot">&lt;-</span> <span class="fu">log</span>(col_chan[<span class="fu">which</span>(col_chan <span class="sc">&gt;</span> <span class="dv">0</span>)])</span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>  col_chan<span class="sc">/</span><span class="fu">max</span>(col_chan) <span class="co"># divide by max to normalize</span></span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>chr <span class="ot">&lt;-</span> <span class="fu">normalize_color</span>(chr)</span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>chg <span class="ot">&lt;-</span> <span class="fu">normalize_color</span>(chg)</span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a>chb <span class="ot">&lt;-</span> <span class="fu">normalize_color</span>(chb)</span>
+<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a>ch_rgb <span class="ot">&lt;-</span> <span class="fu">rgb</span>(chr, chg, chb) <span class="co">#combine channels to rgb</span></span>
+<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(<span class="at">data =</span> <span class="fu">expand.grid</span>(<span class="at">x =</span> <span class="fu">seq</span>(<span class="sc">-</span><span class="dv">2</span>, <span class="dv">1</span>, <span class="at">length.out =</span> <span class="dv">600</span>), </span>
+<span id="cb10-27"><a href="#cb10-27" aria-hidden="true" tabindex="-1"></a>                          <span class="at">y =</span> <span class="fu">seq</span>(<span class="sc">-</span><span class="dv">2</span>, <span class="dv">2</span>, <span class="at">length.out =</span> <span class="dv">600</span>)), <span class="fu">aes</span>(y, <span class="sc">-</span>x)) <span class="sc">+</span> </span>
+<span id="cb10-28"><a href="#cb10-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_raster</span>(<span class="at">fill =</span> ch_rgb, </span>
+<span id="cb10-29"><a href="#cb10-29" aria-hidden="true" tabindex="-1"></a>              <span class="at">interpolate =</span> <span class="cn">TRUE</span>) <span class="sc">+</span> </span>
+<span id="cb10-30"><a href="#cb10-30" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_fixed</span>() <span class="sc">+</span> </span>
+<span id="cb10-31"><a href="#cb10-31" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 <div class="cell-output-display">
-<p><img src="Buddhabrot-Set-Writeup_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid" width="672"></p>
+<p><img src="Buddhabrot-Set-Writeup_files/figure-html/colorized-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
-<p>Can we find points that are equal to or better than these? If we move a small random distance from each point in the previous set, we can test what their trajectory length would be and if it is longer, we can include it in the long_dwell set.</p>
-<div class="cell" data-hash="Buddhabrot-Set-Writeup_cache/html/unnamed-chunk-7_4a55f9083f4fd9714952f0797204fe52">
-<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>mutate1 <span class="ot">&lt;-</span> <span class="cf">function</span>(c) {</span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>      c <span class="sc">+</span> <span class="fu">runif</span>(<span class="dv">1</span>,<span class="dv">0</span>,.<span class="dv">0001</span>) <span class="sc">*</span> <span class="fu">exp</span>(<span class="fu">runif</span>(<span class="dv">1</span>, <span class="sc">-</span>pi, pi)<span class="sc">*</span>1i)</span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>new_point <span class="ot">&lt;-</span> <span class="fu">unlist</span>(<span class="fu">lapply</span>(long_dwell<span class="sc">$</span>point, mutate1))</span>
-<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>dwell_traj_new <span class="ot">&lt;-</span> <span class="fu">lapply</span>(<span class="at">X =</span> new_point, </span>
-<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>                    <span class="at">FUN =</span> trajectory, </span>
-<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>                    <span class="at">maxiter =</span> <span class="dv">500</span>)</span>
-<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>mutate_long_dwell <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">point =</span> new_point, </span>
-<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>                                <span class="at">dwell =</span> <span class="fu">unlist</span>(<span class="fu">lapply</span>(dwell_traj_new, length)))</span>
-<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>long_dwell <span class="ot">&lt;-</span> <span class="fu">rbind</span>(long_dwell, mutate_long_dwell[<span class="fu">which</span>(long_dwell<span class="sc">$</span>dwell <span class="sc">&lt;</span> mutate_long_dwell<span class="sc">$</span>dwell),])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<p>The prior idea needs to be implemented for different color channels! I need to implement it where, for different max iterations, we can find long dwell times up to each max iteration and color these points in three channels: R, G, B</p>
-<div class="cell" data-hash="Buddhabrot-Set-Writeup_cache/html/unnamed-chunk-8_520ea8371685772dbb4ba879732507e0">
-<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>dwelldata_0 <span class="ot">&lt;-</span> <span class="fu">replicate</span>(<span class="dv">100000</span>, <span class="fu">uniform_sampling3</span>())</span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>dwell_traj_0 <span class="ot">&lt;-</span> <span class="fu">lapply</span>(<span class="at">X =</span> dwelldata_0, </span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>                    <span class="at">FUN =</span> trajectory, </span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>                    <span class="at">maxiter =</span> <span class="dv">5000</span>)</span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>dwell_traj_0_imprnt <span class="ot">&lt;-</span> dwell_traj_0[<span class="fu">which</span>(<span class="fu">unlist</span>(<span class="fu">lapply</span>(dwell_traj_0, length)) <span class="sc">&gt;=</span> <span class="dv">50</span>)]</span>
-<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>dwell_traj_0_mutate <span class="ot">&lt;-</span> dwelldata_0[<span class="fu">which</span>(<span class="fu">unlist</span>(<span class="fu">lapply</span>(dwell_traj_0, length)) <span class="sc">&gt;=</span> <span class="dv">30</span>)] <span class="sc">%&gt;%</span> </span>
-<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate1</span>() <span class="sc">%&gt;%</span></span>
-<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">lapply</span>(<span class="at">FUN =</span> trajectory, <span class="at">maxiter =</span> <span class="dv">5000</span>) </span>
-<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>find_long_dwell <span class="ot">&lt;-</span> <span class="cf">function</span>(trajectories, <span class="at">maxiter =</span> <span class="fu">c</span>(<span class="dv">10</span>, <span class="dv">100</span>, <span class="dv">1000</span>)) {</span>
-<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>  dwell_length <span class="ot">&lt;-</span> <span class="fu">unlist</span>(<span class="fu">lapply</span>(trajectories, length))</span>
-<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>  dwell1000 <span class="ot">&lt;-</span> trajectories[<span class="fu">which</span>(dwell_length <span class="sc">&gt;</span> .<span class="dv">4</span><span class="sc">*</span>maxiter[<span class="dv">3</span>])]</span>
-<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>  dwell100 <span class="ot">&lt;-</span> trajectories[<span class="fu">which</span>((dwell_length <span class="sc">&gt;=</span> .<span class="dv">5</span><span class="sc">*</span>maxiter[<span class="dv">2</span>]) <span class="sc">&amp;</span> (dwell_length <span class="sc">&lt;=</span> maxiter[<span class="dv">2</span>]))]</span>
-<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>  dwell10 <span class="ot">&lt;-</span> trajectories[<span class="fu">which</span>((dwell_length <span class="sc">&gt;=</span> .<span class="dv">5</span><span class="sc">*</span>maxiter[<span class="dv">1</span>]) <span class="sc">&amp;</span> (dwell_length <span class="sc">&lt;=</span> maxiter[<span class="dv">1</span>]))]</span>
-<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rbind</span>(<span class="fu">data.frame</span>(<span class="at">traj =</span> <span class="fu">unlist</span>(dwell10), </span>
-<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a>                   <span class="at">channel =</span> <span class="fu">rep</span>(<span class="st">"dwell10"</span>, </span>
-<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">times =</span> <span class="fu">length</span>(<span class="fu">unlist</span>(dwell10)))),</span>
-<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a>        <span class="fu">data.frame</span>(<span class="at">traj =</span> <span class="fu">unlist</span>(dwell100), </span>
-<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a>                   <span class="at">channel =</span> <span class="fu">rep</span>(<span class="st">"dwell100"</span>, </span>
-<span id="cb14-23"><a href="#cb14-23" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">times =</span> <span class="fu">length</span>(<span class="fu">unlist</span>(dwell100)))),</span>
-<span id="cb14-24"><a href="#cb14-24" aria-hidden="true" tabindex="-1"></a>        <span class="fu">data.frame</span>(<span class="at">traj =</span> <span class="fu">unlist</span>(dwell1000), </span>
-<span id="cb14-25"><a href="#cb14-25" aria-hidden="true" tabindex="-1"></a>                   <span class="at">channel =</span> <span class="fu">rep</span>(<span class="st">"dwell1000"</span>, </span>
-<span id="cb14-26"><a href="#cb14-26" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">times =</span> <span class="fu">length</span>(<span class="fu">unlist</span>(dwell1000)))))</span>
-<span id="cb14-27"><a href="#cb14-27" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb14-28"><a href="#cb14-28" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-29"><a href="#cb14-29" aria-hidden="true" tabindex="-1"></a>test <span class="ot">&lt;-</span> <span class="fu">find_long_dwell</span>(<span class="at">trajectories =</span> dwell_traj_0_mutate, <span class="at">maxiter =</span> <span class="fu">c</span>(<span class="dv">50</span>, <span class="dv">500</span>, <span class="dv">5000</span>))</span>
-<span id="cb14-30"><a href="#cb14-30" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-31"><a href="#cb14-31" aria-hidden="true" tabindex="-1"></a>bbcolors <span class="ot">&lt;-</span> <span class="cf">function</span>(data, pxl) {</span>
-<span id="cb14-32"><a href="#cb14-32" aria-hidden="true" tabindex="-1"></a>  zs10 <span class="ot">&lt;-</span> <span class="fu">with</span>(<span class="fu">subset</span>(data, channel <span class="sc">==</span> <span class="st">"dwell10"</span>), </span>
-<span id="cb14-33"><a href="#cb14-33" aria-hidden="true" tabindex="-1"></a>               <span class="fu">data.frame</span>(<span class="at">x =</span> <span class="fu">Re</span>(traj), <span class="at">y =</span> <span class="fu">Im</span>(traj)))</span>
-<span id="cb14-34"><a href="#cb14-34" aria-hidden="true" tabindex="-1"></a>  zs100 <span class="ot">&lt;-</span> <span class="fu">with</span>(<span class="fu">subset</span>(data, channel <span class="sc">==</span> <span class="st">"dwell100"</span>), </span>
-<span id="cb14-35"><a href="#cb14-35" aria-hidden="true" tabindex="-1"></a>                <span class="fu">data.frame</span>(<span class="at">x =</span> <span class="fu">Re</span>(traj), <span class="at">y =</span> <span class="fu">Im</span>(traj)))</span>
-<span id="cb14-36"><a href="#cb14-36" aria-hidden="true" tabindex="-1"></a>  zs1000 <span class="ot">&lt;-</span> <span class="fu">with</span>(<span class="fu">subset</span>(data, channel <span class="sc">==</span> <span class="st">"dwell1000"</span>), </span>
-<span id="cb14-37"><a href="#cb14-37" aria-hidden="true" tabindex="-1"></a>                 <span class="fu">data.frame</span>(<span class="at">x =</span> <span class="fu">Re</span>(traj), <span class="at">y =</span> <span class="fu">Im</span>(traj)))</span>
-<span id="cb14-38"><a href="#cb14-38" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb14-39"><a href="#cb14-39" aria-hidden="true" tabindex="-1"></a>  ch_long1 <span class="ot">&lt;-</span> <span class="fu">bin2</span>(<span class="fu">data.matrix</span>(zs10), </span>
-<span id="cb14-40"><a href="#cb14-40" aria-hidden="true" tabindex="-1"></a>                   <span class="fu">matrix</span>( <span class="fu">c</span>(<span class="sc">-</span><span class="dv">2</span>,<span class="sc">-</span><span class="dv">2</span>,<span class="dv">1</span>,<span class="dv">2</span>), <span class="dv">2</span>, <span class="dv">2</span>), </span>
-<span id="cb14-41"><a href="#cb14-41" aria-hidden="true" tabindex="-1"></a>                   <span class="at">nbin =</span> <span class="fu">c</span>(pxl,pxl))<span class="sc">$</span>nc</span>
-<span id="cb14-42"><a href="#cb14-42" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb14-43"><a href="#cb14-43" aria-hidden="true" tabindex="-1"></a>  ch_long2 <span class="ot">&lt;-</span> <span class="fu">bin2</span>(<span class="fu">data.matrix</span>(zs100), </span>
-<span id="cb14-44"><a href="#cb14-44" aria-hidden="true" tabindex="-1"></a>                   <span class="fu">matrix</span>( <span class="fu">c</span>(<span class="sc">-</span><span class="dv">2</span>,<span class="sc">-</span><span class="dv">2</span>,<span class="dv">1</span>,<span class="dv">2</span>), <span class="dv">2</span>, <span class="dv">2</span>), </span>
-<span id="cb14-45"><a href="#cb14-45" aria-hidden="true" tabindex="-1"></a>                   <span class="at">nbin =</span> <span class="fu">c</span>(pxl,pxl))<span class="sc">$</span>nc</span>
-<span id="cb14-46"><a href="#cb14-46" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb14-47"><a href="#cb14-47" aria-hidden="true" tabindex="-1"></a>  ch_long3 <span class="ot">&lt;-</span> <span class="fu">bin2</span>(<span class="fu">data.matrix</span>(zs1000), </span>
-<span id="cb14-48"><a href="#cb14-48" aria-hidden="true" tabindex="-1"></a>                   <span class="fu">matrix</span>( <span class="fu">c</span>(<span class="sc">-</span><span class="dv">2</span>,<span class="sc">-</span><span class="dv">2</span>,<span class="dv">1</span>,<span class="dv">2</span>), <span class="dv">2</span>, <span class="dv">2</span>), </span>
-<span id="cb14-49"><a href="#cb14-49" aria-hidden="true" tabindex="-1"></a>                   <span class="at">nbin =</span> <span class="fu">c</span>(pxl,pxl))<span class="sc">$</span>nc</span>
-<span id="cb14-50"><a href="#cb14-50" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb14-51"><a href="#cb14-51" aria-hidden="true" tabindex="-1"></a>  col_long1 <span class="ot">&lt;-</span> <span class="fu">rgb</span>(ch_long1<span class="sc">/</span><span class="fu">max</span>(ch_long1), </span>
-<span id="cb14-52"><a href="#cb14-52" aria-hidden="true" tabindex="-1"></a>                   ch_long2<span class="sc">/</span><span class="fu">max</span>(ch_long2), </span>
-<span id="cb14-53"><a href="#cb14-53" aria-hidden="true" tabindex="-1"></a>                   ch_long3<span class="sc">/</span><span class="fu">max</span>(ch_long3))</span>
-<span id="cb14-54"><a href="#cb14-54" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb14-55"><a href="#cb14-55" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="at">data =</span> <span class="fu">expand.grid</span>(<span class="at">x =</span> <span class="fu">seq</span>(<span class="sc">-</span><span class="dv">2</span>, <span class="dv">1</span>, <span class="at">length.out =</span> pxl), </span>
-<span id="cb14-56"><a href="#cb14-56" aria-hidden="true" tabindex="-1"></a>                          <span class="at">y =</span> <span class="fu">seq</span>(<span class="sc">-</span><span class="dv">2</span>, <span class="dv">2</span>, <span class="at">length.out =</span> pxl)), <span class="fu">aes</span>(y, <span class="sc">-</span>x)) <span class="sc">+</span> </span>
-<span id="cb14-57"><a href="#cb14-57" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_raster</span>(<span class="at">fill =</span> col_long1) <span class="sc">+</span> </span>
-<span id="cb14-58"><a href="#cb14-58" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_fixed</span>()</span>
-<span id="cb14-59"><a href="#cb14-59" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb14-60"><a href="#cb14-60" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-61"><a href="#cb14-61" aria-hidden="true" tabindex="-1"></a><span class="fu">bbcolors</span>(test, <span class="dv">300</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output-display">
-<p><img src="Buddhabrot-Set-Writeup_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-<div class="cell" data-hash="Buddhabrot-Set-Writeup_cache/html/unnamed-chunk-9_3f39d62971a5d096dc4fb486969aecb7">
-<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>zs_long1 <span class="ot">&lt;-</span> <span class="fu">unlist</span>(<span class="fu">lapply</span>(<span class="at">X =</span> long_dwell<span class="sc">$</span>point, </span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>                    <span class="at">FUN =</span> trajectory, </span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>                    <span class="at">maxiter =</span> <span class="dv">10</span>), <span class="at">use.names =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>zs_long1data <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(<span class="fu">is.null</span>(zs_long1), <span class="dv">0</span>, <span class="fu">data.frame</span>(<span class="at">x =</span> <span class="fu">Re</span>(zs_long1), <span class="at">y =</span> <span class="fu">Im</span>(zs_long1)))</span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>zs_long2 <span class="ot">&lt;-</span> <span class="fu">unlist</span>(<span class="fu">lapply</span>(<span class="at">X =</span> long_dwell<span class="sc">$</span>point, </span>
-<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>                    <span class="at">FUN =</span> trajectory, </span>
-<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>                    <span class="at">maxiter =</span> <span class="dv">100</span>), <span class="at">use.names =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>zs_long2data <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> <span class="fu">Re</span>(zs_long2), <span class="at">y =</span> <span class="fu">Im</span>(zs_long2))</span>
-<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>zs_long3 <span class="ot">&lt;-</span> <span class="fu">unlist</span>(<span class="fu">lapply</span>(<span class="at">X =</span> long_dwell<span class="sc">$</span>point, </span>
-<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>                    <span class="at">FUN =</span> trajectory, </span>
-<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>                    <span class="at">maxiter =</span> <span class="dv">1000</span>), <span class="at">use.names =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>zs_long3data <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> <span class="fu">Re</span>(zs_long3), <span class="at">y =</span> <span class="fu">Im</span>(zs_long3))</span>
-<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a>ch_long1 <span class="ot">&lt;-</span> <span class="fu">bin2</span>(<span class="fu">data.matrix</span>(zs_long1data), </span>
-<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a>            <span class="fu">matrix</span>( <span class="fu">c</span>(<span class="sc">-</span><span class="dv">2</span>,<span class="sc">-</span><span class="dv">2</span>,<span class="dv">1</span>,<span class="dv">2</span>), <span class="dv">2</span>, <span class="dv">2</span>), </span>
-<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a>            <span class="at">nbin =</span> <span class="fu">c</span>(<span class="dv">300</span>,<span class="dv">300</span>))<span class="sc">$</span>nc</span>
-<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a>ch_long2 <span class="ot">&lt;-</span> <span class="fu">bin2</span>(<span class="fu">data.matrix</span>(zs_long2data), </span>
-<span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a>            <span class="fu">matrix</span>( <span class="fu">c</span>(<span class="sc">-</span><span class="dv">2</span>,<span class="sc">-</span><span class="dv">2</span>,<span class="dv">1</span>,<span class="dv">2</span>), <span class="dv">2</span>, <span class="dv">2</span>), </span>
-<span id="cb15-22"><a href="#cb15-22" aria-hidden="true" tabindex="-1"></a>            <span class="at">nbin =</span> <span class="fu">c</span>(<span class="dv">300</span>,<span class="dv">300</span>))<span class="sc">$</span>nc</span>
-<span id="cb15-23"><a href="#cb15-23" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-24"><a href="#cb15-24" aria-hidden="true" tabindex="-1"></a>ch_long3 <span class="ot">&lt;-</span> <span class="fu">bin2</span>(<span class="fu">data.matrix</span>(zs_long3data), </span>
-<span id="cb15-25"><a href="#cb15-25" aria-hidden="true" tabindex="-1"></a>            <span class="fu">matrix</span>( <span class="fu">c</span>(<span class="sc">-</span><span class="dv">2</span>,<span class="sc">-</span><span class="dv">2</span>,<span class="dv">1</span>,<span class="dv">2</span>), <span class="dv">2</span>, <span class="dv">2</span>), </span>
-<span id="cb15-26"><a href="#cb15-26" aria-hidden="true" tabindex="-1"></a>            <span class="at">nbin =</span> <span class="fu">c</span>(<span class="dv">300</span>,<span class="dv">300</span>))<span class="sc">$</span>nc</span>
-<span id="cb15-27"><a href="#cb15-27" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-28"><a href="#cb15-28" aria-hidden="true" tabindex="-1"></a>col_long1 <span class="ot">&lt;-</span> <span class="fu">rgb</span>(ch_long1<span class="sc">/</span><span class="fu">max</span>(ch_long1), </span>
-<span id="cb15-29"><a href="#cb15-29" aria-hidden="true" tabindex="-1"></a>                 ch_long2<span class="sc">/</span><span class="fu">max</span>(ch_long2), </span>
-<span id="cb15-30"><a href="#cb15-30" aria-hidden="true" tabindex="-1"></a>                 ch_long3<span class="sc">/</span><span class="fu">max</span>(ch_long3))</span>
-<span id="cb15-31"><a href="#cb15-31" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-32"><a href="#cb15-32" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(<span class="at">data =</span> <span class="fu">expand.grid</span>(<span class="at">x =</span> <span class="fu">seq</span>(<span class="sc">-</span><span class="dv">2</span>, <span class="dv">1</span>, <span class="at">length.out =</span> <span class="dv">300</span>), </span>
-<span id="cb15-33"><a href="#cb15-33" aria-hidden="true" tabindex="-1"></a>                          <span class="at">y =</span> <span class="fu">seq</span>(<span class="sc">-</span><span class="dv">2</span>, <span class="dv">2</span>, <span class="at">length.out =</span> <span class="dv">300</span>)), <span class="fu">aes</span>(y, <span class="sc">-</span>x)) <span class="sc">+</span> </span>
-<span id="cb15-34"><a href="#cb15-34" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_raster</span>(<span class="at">fill =</span> col_long1, <span class="at">interpolate =</span> <span class="cn">TRUE</span>) <span class="sc">+</span> </span>
-<span id="cb15-35"><a href="#cb15-35" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_fixed</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output-display">
-<p><img src="Buddhabrot-Set-Writeup_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid" width="672"></p>
-</div>
-<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(<span class="at">data =</span> zs_long3data, <span class="fu">aes</span>(y, x)) <span class="sc">+</span> </span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_bin_2d</span>(<span class="at">bins =</span> <span class="dv">300</span>, <span class="at">drop =</span> <span class="cn">FALSE</span>) <span class="sc">+</span> </span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">lims</span>(<span class="at">y =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="sc">-</span><span class="dv">2</span>), <span class="at">x =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">1.5</span>, <span class="fl">1.5</span>)) <span class="sc">+</span> </span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_fixed</span>() <span class="sc">+</span> </span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_continuous</span>(<span class="at">type =</span> <span class="st">"viridis"</span>) <span class="sc">+</span> </span>
-<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: Removed 25218 rows containing non-finite values (`stat_bin2d()`).</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: Removed 1196 rows containing missing values (`geom_tile()`).</code></pre>
-</div>
-<div class="cell-output-display">
-<p><img src="Buddhabrot-Set-Writeup_files/figure-html/unnamed-chunk-9-2.png" class="img-fluid" width="672"></p>
-</div>
-</div>
+</section>
+<section id="improvements" class="level3">
+<h3 class="anchored" data-anchor-id="improvements">Improvements</h3>
+<p>The result here is, though beautiful, rather noisy. A straightforward way to improve this is to simply include more points: each channel has ~1 million points currently which for a 600x600 figure of 360,000 pixels means each pixel has rather limited counts.</p>
+</section>
 </section>
 
 </main>
