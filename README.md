@@ -4,3 +4,5 @@ Within this repository, I'll be publishing various implementations of mathematic
 <a href="IFS_Fractals.html">IFS Fractals</a>
 <br>
 <a href="Buddhabrot%20Set%20Writeup.html">Buddhabrot Set</a>
+<br>
+<a href="Conway's%20game%20of%20life.html">Conway's Game of Life</a>
