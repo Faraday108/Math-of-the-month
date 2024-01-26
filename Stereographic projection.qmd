@@ -1,0 +1,463 @@
+---
+title: "Stereographic Projection"
+format: 
+  html: 
+    code-fold: true
+---
+
+```{r setup}
+library(rgl)
+suppressPackageStartupMessages(library(tidyverse))
+knitr::knit_hooks$set(webgl = hook_webgl)
+```
+
+## Introduction
+
+For a birthday present, I received the book "Math Art: Truth, Beauty,
+and Equations" by Stephen Ornes and found myself fascinated by the
+variety of ways that mathematical artists have incorporated math into
+different mediums. In the section on stereographic projection, there was
+a piece that was accessible in R: artwork featuring grid projections by
+[Henry Segerman](http://www.segerman.org/). He has some fascinating work
+on 3D printing various mathematical concepts such as stereographic
+projections, calculus surfaces, and the 4D tesseract.
+
+### Stereographic projection
+
+As described at
+[Wikipedia](https://en.wikipedia.org/wiki/Stereographic_projection),
+stereographic projection is a perspective projection through a point on
+the sphere onto a plane perpendicular to the diameter through the point.
+
+![Sterographic](https://upload.wikimedia.org/wikipedia/commons/2/2c/Stereoprojnegone.svg)
+
+The question I wanted to answer with this coding challenge was how to
+take a desired pattern on a plane and find what the pattern on a sphere
+would need to look like to generate the desired projection on the
+plane.\
+To take a set of points on a plane $(X,Y)$ and find their coordinates on the projecting sphere $(x,y,z)$, there is a straightforward relationship:
+
+$$
+\begin{aligned}
+R&=\sqrt{X^2+Y^2}\\ 
+x&=\frac{2X}{1+R^2}\\ 
+y&=\frac{2Y}{1+R^2}\\ 
+z&=\frac{R^2-1}{R^2+1}
+\end{aligned}
+$$
+
+## Dense grid projection  
+To work out any difficulties in the equation, the first plane of points that I projected was a regular grid of points. The x and y values were created with `seq(-5,5,by = .1)` which starts at -5, ends at 5, and spaces values out by .1. Though the code below is not optimal, with only 20,000 points the code still executes relatively quickly (~12s).  
+
+```{r dense grid projection, webgl=TRUE}
+# x_p = X
+x_p <- seq(-5,5,by = .1)
+# y_p = Y
+y_p <- seq(-5,5,by = .1)
+# z_p = Z
+z_p <- -1
+n <- length(x_p) * length(y_p)
+pts <- data.frame(x = rep(NA, n), 
+                  y = rep(NA, n), 
+                  z = rep(NA, n))
+t1 <- Sys.time()
+iteration <- 1
+for (i in x_p/2) {
+  for (j in y_p/2) {
+    R <- sqrt(i^2 + j^2)
+    pts[iteration,1] <- 2*i / (R^2 + 1)
+    pts[iteration,2] <- 2*j / (R^2 + 1)
+    pts[iteration,3] <- (R^2 - 1) / (R^2 + 1)
+    iteration <- iteration + 1
+  }
+}
+grid_time <- Sys.time()-t1
+
+# Add grid to list of points
+xyz <- cbind(expand.grid(x_p, y_p), rep(z_p, n))
+names(xyz) <- c("x", "y", "z")
+pts <- rbind(pts, xyz)
+
+open3d()
+with(pts, plot3d(x, y, z, zlim = c(-5,5)))
+```
+
+## Sparse grid projection  
+In this iteration, I chose to examine how creating the grid first and using a single for loop would affect compute time. The sparse grid here ends up computing much faster, in part due to fewer points but also due to a single iteration of a for loop. Working with `dplyr::mutate` gives a similar computation time.  
+
+```{r sparse grid projection, webgl=TRUE}
+# x_p = X
+x_p1 <- seq(-5,5,by = 1)
+x_p2 <- seq(-5,5,by = .1)
+# y_p = Y
+y_p1 <- seq(-5,5,by = .1)
+y_p2 <- seq(-5,5,by = 1)
+# z_p = Z
+z_p <- -1
+
+xyzpoints <- rbind(expand.grid(x = x_p1, y = y_p1), 
+                expand.grid(x = x_p2, y = y_p2)) %>% 
+  cbind(z = z_p)
+
+n <- nrow(xyzpoints)
+# Create empty dataframe of same size so R doesn't have to reassign memory
+pts <- data.frame(x = rep(NA, n), 
+                  y = rep(NA, n), 
+                  z = rep(NA, n))
+
+t3 <- Sys.time()
+for (i in 1:n) {
+  xi <- xyzpoints[i,1]/2
+  yi <- xyzpoints[i,2]/2
+  R <- sqrt(xi^2 + yi^2)
+  pts[i,1] <- 2*xi / (R^2 + 1)
+  pts[i,2] <- 2*yi / (R^2 + 1)
+  pts[i,3] <- (R^2 - 1) / (R^2 + 1)
+}
+cat(Sys.time() - t3)
+
+# Add grid to list of points
+pts <- rbind(pts, xyzpoints)
+
+open3d()
+with(pts, plot3d(x, y, z, zlim = c(-5,5)))
+```
+
+## Spare parallel grid projection
+This grid explores a different pattern and runs similarly quickly
+```{r sparse parallel grid projection, webgl=TRUE}
+# x_p = X
+# sapply takes big x-grid and offsets by +/- .1
+x_p1 <- seq(-5,5,by = 1) %>%
+  sapply(function(x) c(x - .1, x + .1)) %>%
+  # convert output of sapply matrix to vector
+  as.vector()
+x_p2 <- seq(-5,5,by = .1)
+# y_p = Y
+y_p1 <- seq(-5,5,by = .1)
+y_p2 <- seq(-5,5,by = 1) %>%
+  sapply(function(x) c(x - .1, x + .1)) %>%
+  as.vector()
+# z_p = Z
+z_p <- -1
+
+xyzpoints <- rbind(expand.grid(x = x_p1, y = y_p1), 
+                expand.grid(x = x_p2, y = y_p2)) %>% 
+  cbind(z = z_p)
+
+n <- nrow(xyzpoints)
+# Create empty dataframe of same size so R doesn't have to reassign memory
+pts <- data.frame(x = rep(NA, n), 
+                  y = rep(NA, n), 
+                  z = rep(NA, n))
+for (i in 1:n) {
+  xi <- xyzpoints[i,1]/2
+  yi <- xyzpoints[i,2]/2
+  R <- sqrt(xi^2 + yi^2)
+  pts[i,1] <- 2*xi / (R^2 + 1)
+  pts[i,2] <- 2*yi / (R^2 + 1)
+  pts[i,3] <- (R^2 - 1) / (R^2 + 1)
+}
+
+# Add grid to list of points
+pts <- rbind(pts, xyzpoints)
+
+open3d()
+with(pts, plot3d(x, y, z, zlim = c(-5,5)))
+```
+
+## Hexagon grid projection
+This example was directly inspired by the hexagon grid of Henry Segerman and provided an interesting challenge. The challenge lies in the grid - R is not a language will conveniently prebuilt hexagons I could easily bend to this purpose so finding a way to generate hexagons in a grid was of primary importance.  
+
+### ICreate unit hexagon
+Initially, I created a base hexagon with a specified number of points that could be copied and translated into a grid. The hexagon is generated by:  
+
+1. Allocating space for points by copying initial point
+2. Creating vector of directions of each hexagon angle: go at 0 radians for the first n points, then $\pi/3$ radians for the next n points, then $2\pi/3$ radians for next n, etc. 
+3. These directions are then used to effectively wrap the initial set of points around the hexagon. 
+
+```{r initial approach}
+####### CREATE BASE UNIT HEXAGON POINTS ##############
+# points per side
+pps <- 20
+# Move initial point along diagonal to center
+imove <- 10
+# Initial x and y
+x0 <- 0 + imove * 1/2
+y0 <- 0 + imove * sqrt(3)/2
+z0 <- -1
+
+# prefill points of one hexagon
+hex1 <- data.frame(x = rep(x0, 6 * (pps - 1)), 
+                   y = rep(y0, 6 * (pps - 1)))
+# Angle directions to walk around hexagon
+direction <- c(rep(0, pps - 1), 
+               rep(pi/3, pps - 1), 
+               rep(2*pi/3, pps - 1), 
+               rep(pi, pps - 1), 
+               rep(4*pi/3, pps - 1), 
+               rep(5*pi/3, pps - 2))
+# Wrap points around hexagon
+for (i in 1:(6 * (pps - 1) - 1)) {
+  hex1$x[i+1] <- hex1$x[i] + cos(direction[i])
+  hex1$y[i+1] <- hex1$y[i] + sin(direction[i])
+}
+# Convert to unit hex side length 1
+unit_hex <- hex1/(pps - 1 + imove)
+
+plot(unit_hex, asp = 1, pch = 16)
+```
+
+### Create hex based grid  
+Here I created hexagonal grids with three different arrangements of hexagons as I sought to find a way to have a nicely centered grid for the inverse projection. The three grids are:  
+1. Regular 5x5 grid where each column of hexagons is up/down by half the hexagon height from the prior column. 
+2. A grid with different numbers of columns: 3, 4, 5, 6, 5, 4
+3. A grid with different numbers of columns: 4, 5, 6, 7, 8, 7, 6, 5
+
+```{r}
+#########################################################
+# Create 5 x 5 grid
+hy <- sqrt(3)
+high_y <- seq(-3, 1) * hy + hy/2
+low_y <- seq(-3, 1) * hy
+hex_coords <- data.frame(x = c(rep(c(-4.5, -3, -1.5, 0, 1.5, 3), 
+                                   each = 5)), 
+                         y = c(high_y, low_y, high_y, low_y, high_y, low_y))
+
+# Create 3x4x5x6x5x4 grid
+hex_coords2 <- data.frame(x = c(rep(-4.5, 3), 
+                                rep(-3, 4), 
+                                rep(-1.5, 5), 
+                                rep(0, 6), 
+                                rep(1.5, 5), 
+                                rep(3, 4)), 
+                          y = c(seq(-2, 0) * hy + hy/2, 
+                                seq(-2,1) * hy, 
+                                seq(-3,1) * hy + hy/2, 
+                                seq(-3,2) * hy, 
+                                seq(-3,1) * hy + hy/2, 
+                                seq(-2,1) * hy))
+# Create 4x5x6x7x8x7x6x5 grid
+hex_coords3 <- data.frame(x = c(rep(-6, 4), 
+                                rep(-4.5, 5), 
+                                rep(-3, 6), 
+                                rep(-1.5, 7), 
+                                rep(0, 8),
+                                rep(1.5, 7), 
+                                rep(3, 6), 
+                                rep(4.5, 5)), 
+                          y = c(seq(-2,1) * hy,
+                                seq(-3,1) * hy + hy/2, 
+                                seq(-3,2) * hy, 
+                                seq(-4,2) * hy + hy/2, 
+                                seq(-4,3) * hy, # MID
+                                seq(-4,2) * hy + hy/2, 
+                                seq(-3,2) * hy, 
+                                seq(-3,1) * hy + hy/2))
+
+# Function to move reference hexagon to any coordinate (dx,dy)
+hex_move <- function(hex, dx, dy) {
+  hex %>% 
+    mutate(x = round(hex$x + dx,8), 
+         y = round(hex$y + dy,8))
+}
+
+make_hex_grid <- function(coords) {
+  mapply(hex_move, dx = coords$x, dy = coords$y, 
+         MoreArgs = list(hex = unit_hex)) %>% #outputs matrix
+    t() %>% #transpose
+    data.frame() %>% #convert to dataframe
+    unnest(c(x, y)) %>% #unnest x and y
+    cbind(z = z0) #add z coordinate of flat plane
+}
+
+grid1 <- make_hex_grid(hex_coords)
+grid2 <- make_hex_grid(hex_coords2)
+grid3 <- make_hex_grid(hex_coords3)
+
+plot(grid3$x, grid3$y, asp = 1, xlab = "", ylab = "")
+```
+
+### Inverse Projection  
+To efficiently handle inverse projection of this grid, I chose to create a helper function that takes an input `hex_grid` and returns the grid with the projection on top of it.  
+
+```{r hexagon, webgl=TRUE}
+# Make function to project the input grid onto sphere
+hex_grid_projection <- function(hex_grid) {
+  n <- nrow(hex_grid) # find number of points
+  # Create empty dataframe of same size so R doesn't have to reassign memory
+  pts <- data.frame(x = rep(NA, n), 
+                  y = rep(NA, n), 
+                  z = rep(NA, n))
+  # loop over each point in grid, projecting onto sphere
+  for (i in 1:n) {
+    # following algorithm projects grid through center of sphere
+    # dividing coords of plane on bottom of unit sphere by 2 moves them to middle
+    xi <- hex_grid[i,1]/2
+    yi <- hex_grid[i,2]/2
+    R <- sqrt(xi^2 + yi^2)
+    pts[i,1] <- 2*xi / (R^2 + 1)
+    pts[i,2] <- 2*yi / (R^2 + 1)
+    pts[i,3] <- (R^2 - 1) / (R^2 + 1)
+  }
+  # Add grid to list of points
+  pts <- rbind(pts, hex_grid)
+} 
+
+pts3 <- hex_grid_projection(grid3)
+
+open3d()
+with(pts3, plot3d(x, y, z, asp = "iso"))
+```
+
+## Hexagon grid projection: Part 2
+
+In the prior implementation, I was troubled by the density of points once the grid was projected onto the sphere and I couldn't think of a straightforward way to redistribute the points within the grid. I decided to handle this by *first* generating a grid of points and then passing the grid to a hexagon generator. This hexagon generator finds the distance from the center of the hex to the top of the projection sphere and uses this distance to determine the number of points.  
+When looking at how to populate the hexagonal grid, I came across the idea of an axial based coordinate system that makes the process of finding grid points easier. Details can be found at [Hexagonal grid](https://www.redblobgames.com/grids/hexagons/). There is a pattern to coordinates that can be used to generate a regular hexagonal grid centered at (0,0) in the hexagonal coordinate system. This is performed in `make_grid` that takes number of cells surrounding the middle hex as a parameter, and this parameter is then included as the attribute `hex_size`.  
+As a next step, these coordinates were converted to xy (preserving the attribute `hex_size`). At this point, I have a regular hex grid that has a central hexagon; this grid, to have the projected sphere centered above a vertex is then trimmed and translated. An easy transformation is to take off half the sides by eliminating the left column (filtering out the min `x`) and eliminating the top row (filtering out max `y`). This resulting grid is then translated to center it above a vertex. These operations are performed in `center_three`.  
+With a newly centered grid, hexagons are built on all the coordinates with the helper function `hex_grid_populate` which applies the function `make_hex` to each point of the grid. The advantage gained here is that each point of the grid can have its distance from the top of the projected sphere calculated and used as a parameter for points per side. The helper function takes one more parameter `scale` which is used to reduce the size of each hexagon on the given grid size.  
+Finally, the grid of hexagons is projected onto the sphere. All these functions are wrapped together into the `full_hex_generator()` function which takes parameters `n` for number of hexagons from center, `size` of grid (size = 1 makes each side length 1), and `scale` which reduces the size of each hexagon on the grid.
+
+```{r axial grid helper functions}
+# Make hex grid with axial coordinates
+make_grid <- function(n) {
+  c <- -n:n
+  df <- data.frame(q=integer(), r=integer())
+  for (i in 1:length(c)) {
+    if (c[i] <= 0) {
+      df <- rbind(df, data.frame(q = c[i], 
+                                 r = -c[1:(2*n+1+c[i])]))
+    }else{
+      df <- rbind(df, data.frame(q = c[i], 
+                                 r = -c[(1+c[i]):(2*n+1)]))
+    }
+  }
+  df
+}
+
+# Centers grid where three hexagons meet
+center_three <- function(cart_grid) {
+  hex_size <- attributes(cart_grid)$hex_size
+  centered <- cart_grid %>%
+    # remove leftmost column
+    filter(x != min(x)) %>%
+    group_by(x) %>%
+    # remove top of remaining columns
+    filter(y != max(y)) %>%
+    mutate(x = x - .5*hex_size, 
+           y = y + (sqrt(3)/2)*hex_size) %>%
+    ungroup() %>%
+    `attr<-`("hex_size", attr(cart_grid,"hex_size") )
+}
+
+# Convert axial coordinates to cartesian
+qr_xy_convert <- function(qr, size = 1) {
+  n <- nrow(qr)
+  pts <- data.frame(x = integer(), y = integer())
+  for (i in 1:n) {
+    qi <- qr$q[i]
+    ri <- qr$r[i]
+    pts[i,1] <- size * (3/2*qi)
+    pts[i,2] <- size * (sqrt(3)/2 * qi + sqrt(3)*ri)
+  }
+  attr(pts, "hex_size") <- size
+  pts
+}
+
+# Function that makes a hexagon centered at a coordinate. Will be mapply'ed
+# to grid
+make_hex <- function(x, y, hex_size = 1, scale=1) {
+  # move from center to lower left corner
+  x0 <- x - .5*scale*hex_size
+  y0 <- y - sqrt(3)/2*scale*hex_size
+  d <- sqrt(x0^2 + y0^2 + 4) # Distance from (0,0,1) to (x0,y0,-1)
+  d_min <- sqrt(.75^2 + 0^2 + 4) # Minimum distance
+  pps_0 <- 50 # initial points per side
+  k <- pps_0 * d_min # proportion constant for pps
+  pps <- ceiling(k / d) # pps for hex
+  # Direction to walk around starting at lower left corner
+  direction <- c(rep(0, pps - 1), rep(pi/3, pps - 1), rep(2*pi/3, pps - 1), rep(pi, pps - 1), rep(4*pi/3, pps - 1), rep(5*pi/3, pps - 2))
+  hex1 <- data.frame(x = rep(x0, 6 * (pps - 1)), 
+                     y = rep(y0, 6 * (pps - 1)))
+  for (i in 1:(6 * (pps - 1) - 1)) {
+    hex1$x[i+1] <- hex1$x[i] + cos(direction[i])/((pps-1)/(scale*hex_size))
+    hex1$y[i+1] <- hex1$y[i] + sin(direction[i])/((pps-1)/(scale*hex_size))
+  }
+  hex1
+}
+
+# Function to help apply the make_hex function to each point of the grid
+hex_grid_populate <- function(hex_grid, scale = 1) {
+  mapply(make_hex, 
+         x = hex_grid$x, 
+         y = hex_grid$y, 
+         MoreArgs = list(scale = scale, 
+                         hex_size = attributes(hex_grid)$hex_size)) %>% #makes nested matrix
+    t() %>% #transpose so x and y are on columns instead of rows
+    data.frame() %>% #convert to df
+    unnest(c(x,y)) %>% #unnest
+    cbind(z = -1) # add z coordinate of flat plane
+}
+
+# Make function to project the input grid onto sphere
+hex_grid_projection <- function(hex_grid) {
+  n <- nrow(hex_grid) # find number of points
+  # Create empty dataframe of same size so R doesn't have to reassign memory
+  pts <- data.frame(x = rep(NA, n), 
+                    y = rep(NA, n), 
+                    z = rep(NA, n))
+  # loop over each point in grid, projecting onto sphere
+  for (i in 1:n) {
+    # following algorithm projects grid through center of sphere
+    # dividing coords of plane on bottom of unit sphere by 2 moves them to middle
+    xi <- hex_grid[i,1]/2
+    yi <- hex_grid[i,2]/2
+    R <- sqrt(xi^2 + yi^2)
+    pts[i,1] <- 2*xi / (R^2 + 1)
+    pts[i,2] <- 2*yi / (R^2 + 1)
+    pts[i,3] <- (R^2 - 1) / (R^2 + 1)
+  }
+  # Add grid to list of points
+  pts <- rbind(pts, hex_grid)
+} 
+
+full_hex_generator <- function(n = 1, size = 1, scale = 1) {
+  n %>%
+  make_grid() %>%
+  qr_xy_convert(size = size) %>%
+  center_three() %>%
+  hex_grid_populate(scale = scale) %>%
+  hex_grid_projection() 
+}
+```
+
+```{r generate hex grid, webgl=TRUE}
+pts <- full_hex_generator(n = 7, size = .2, scale = .7)
+
+open3d()
+with(pts, plot3d(x, y, z, asp = "iso"))
+
+```
+
+## Sphere for My Kids
+Finally, my 5 year old was watching me work on this code implementation and was underwhelmed with what was visible on the screen. To pique his interest, I asked if I could make anything for him and he wanted to see a ball!  
+
+```{r sphere, webgl=TRUE}
+theta <- seq(0, 2*pi, by = .1)
+phi <- seq(0, pi, by = .1)
+n <- length(theta) * length(phi)
+pts <- data.frame(x = rep(NA, n), 
+                  y = rep(NA, n), 
+                  z = rep(NA, n))
+iteration <- 1
+for (i in theta) {
+  for (j in phi) {
+    pts[iteration,1] <- cos(i)*sin(j)
+    pts[iteration,2] <- sin(i)*sin(j)
+    pts[iteration,3] <- cos(j)
+    iteration <- iteration + 1
+  }
+}
+open3d()
+with(pts, plot3d(x, y, z, xlim = c(-1,1), ylim = c(-1,1), zlim = c(-1,1)))
+```
