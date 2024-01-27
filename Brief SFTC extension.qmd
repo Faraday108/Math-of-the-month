@@ -1,6 +1,6 @@
 ---
 title: "Brief second fundamental theorem of calculus extension"
-format: pdf
+format: html
 ---
 
 ## Second fundamental theorem of calculus  
@@ -18,7 +18,7 @@ $$
 ## Example  
 Find the derivative of $\displaystyle \int_{\pi/2}^{x^3} \cos(t) dt$
 
-$$
+
 \begin{aligned}
 F(x) &= \int_{\pi/2}^{x^3} \cos(t) dt \\
 F'(x) &= \frac{dF}{du}\frac{du}{dx} \\
@@ -29,4 +29,3 @@ F'(x) &= \frac{dF}{du}\frac{du}{dx} \\
   &= 3x^2 \cos(x^3)
 
 \end{aligned}
-$$
