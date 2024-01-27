@@ -9,4 +9,4 @@ Within this repository, I'll be publishing various implementations of mathematic
 <br>
 <a href="Stereographic%20projection.html">Stereographic Projection</a>
 <br>
-<a href = "Brief%20SFTC%20extension.html">Brief Second Fundamental Theorem of Calculus Extension</a>
+<a href="Brief%20SFTC%20extension.html">Brief Second Fundamental Theorem of Calculus Extension</a>
