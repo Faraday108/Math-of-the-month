@@ -78,7 +78,7 @@ xyz <- cbind(expand.grid(x_p, y_p), rep(z_p, n))
 names(xyz) <- c("x", "y", "z")
 pts <- rbind(pts, xyz)
 
-open3d()
+open3d(silent = TRUE)
 with(pts, plot3d(x, y, z, zlim = c(-5,5)))
 ```
 
@@ -119,7 +119,7 @@ cat(Sys.time() - t3)
 # Add grid to list of points
 pts <- rbind(pts, xyzpoints)
 
-open3d()
+open3d(silent = TRUE)
 with(pts, plot3d(x, y, z, zlim = c(-5,5)))
 ```
 
@@ -162,7 +162,7 @@ for (i in 1:n) {
 # Add grid to list of points
 pts <- rbind(pts, xyzpoints)
 
-open3d()
+open3d(silent = TRUE)
 with(pts, plot3d(x, y, z, zlim = c(-5,5)))
 ```
 
@@ -306,7 +306,7 @@ hex_grid_projection <- function(hex_grid) {
 
 pts3 <- hex_grid_projection(grid3)
 
-open3d()
+open3d(silent = TRUE)
 with(pts3, plot3d(x, y, z, asp = "iso"))
 ```
 
@@ -434,7 +434,7 @@ full_hex_generator <- function(n = 1, size = 1, scale = 1) {
 ```{r generate hex grid, webgl=TRUE}
 pts <- full_hex_generator(n = 7, size = .2, scale = .7)
 
-open3d()
+open3d(silent = TRUE)
 with(pts, plot3d(x, y, z, asp = "iso"))
 
 ```
@@ -458,6 +458,6 @@ for (i in theta) {
     iteration <- iteration + 1
   }
 }
-open3d()
+open3d(silent = TRUE)
 with(pts, plot3d(x, y, z, xlim = c(-1,1), ylim = c(-1,1), zlim = c(-1,1)))
 ```
