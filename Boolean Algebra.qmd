@@ -1,6 +1,6 @@
 ---
 title: "Boolean Algebra"
-format: revealjs
+format: html
 
 ---
 ## Boolean Algebra  
@@ -42,13 +42,13 @@ $\bar 0 = 1, \quad \bar 1 = 0$
 |0|1|0|0|1|1|
 |0|0|1|0|0|0|
 |0|0|0|0|1|1|
-
+: {.striped}
 
 ## Logic Gates  
 * Boolean algebra is used to model circuitry of electronic devices such as computers. 
 * Gates can be combined into circuits to perform useful functions. 
 
-![](logic_gates.png)
+![](BA_figures/logic_gates.png)
 
 ## Examples of circuit - Half Adder  
 :::: {.columns}
@@ -56,7 +56,7 @@ $\bar 0 = 1, \quad \bar 1 = 0$
 ::: {.column width="60%"}
 The half-adder adds two binary numbers and gives a sum (0 or 1) and a carry (0 or 1) that instructs the next number to be carried. Consider (in binary) 1 + 1 = 10. This is the result we get with the half adder: sum of 0 (in the 1's place) and a carry of 1 (in the 2's place). 
 
-![](half_adder.png)
+![](BA_figures/half_adder.png)
 :::
 
 ::: {.column width="40%"}
@@ -75,6 +75,8 @@ The half-adder adds two binary numbers and gives a sum (0 or 1) and a carry (0 o
 +--------+-----------+------+---------+
 |0       |0          | 0    | 0       |
 +--------+-----------+------+---------+
+: {.striped}
+
 :::
 
 ::::
@@ -88,7 +90,7 @@ Consider: a committee of three people decide issues. Each individual votes yes (
 :::
 
 ::: {.column width="60%"}
-![](majority_vote.png)
+![](BA_figures/majority_vote.png)
 
 :::
 
@@ -100,7 +102,7 @@ Consider: a committee of three people decide issues. Each individual votes yes (
 ::: {.column width="60%"}
 Sometimes a light fixture is controlled by more than one switch, a circuit needs to be designed so that flipping any one switch changes the state of the light.  
 
-![](two_switch.png)
+![](BA_figures/two_switch.png)
 :::
 
 ::: {.column width="40%"}
@@ -117,10 +119,12 @@ Sometimes a light fixture is controlled by more than one switch, a circuit needs
 +--------+-----------+----------------+
 |0       |0          |    1           |
 +--------+-----------+----------------+
+: {.striped}
+
 :::
 
 ::::
 
 ## Acknowledgements  
 
-* Facts and figures were adapted from Discrete Mathematics and Its Applications by Kenneth H. Rosen
+* Facts and figures were adapted from "Discrete Mathematics and Its Applications" by Kenneth H. Rosen ISBN 9780073383095. 
