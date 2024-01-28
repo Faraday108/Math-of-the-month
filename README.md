@@ -10,3 +10,5 @@ Within this repository, I'll be publishing various implementations of mathematic
 <a href="Stereographic%20projection.html">Stereographic Projection</a>
 <br>
 <a href="Brief%20SFTC%20extension.html">Brief Second Fundamental Theorem of Calculus Extension</a>
+<br>
+<a href = "Boolean%20Algebra.html">Boolean Algebra Introduction</a>
