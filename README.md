@@ -14,3 +14,7 @@ Within this repository, I'll be publishing various implementations of mathematic
 <a href = "Boolean%20Algebra.html">Boolean Algebra Introduction</a>
 <br>
 <a href = "Bayes_Theorem.html">Bayes Theorem Introduction</a>
+<br>
+<a href = "Roots_of_unity_writeup.html">Roots of Unity Writeup</a>
+<br> 
+<a href = "L-systems.html">L-Systems</a>
