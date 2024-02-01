@@ -119,8 +119,7 @@ Given a step size and an angle increment, the turtle (represented by the state) 
 </section>
 <section id="basic-r-code-implementation" class="level2">
 <h2 class="anchored" data-anchor-id="basic-r-code-implementation">Basic R code implementation</h2>
-<p>In the following code block, the curve “Koch Snowflake” is implemented. This pattern uses the axiom <span class="math inline">\(F-F-F-F\)</span> and transformation rule <span class="math inline">\(F \rightarrow F-F+F+FF-F-F+F\)</span>. The change in angle is <span class="math inline">\(90^{\circ}\)</span> and this particular iteration runs for two generations.<br>
-To help in the efficient drawing of this curve, I created a helper function called <code>draw_l_curve</code> that handles the computation and drawing. The function:</p>
+<p>To help in the efficient drawing of this curve, I created a helper function called <code>draw_l_curve</code> that handles the computation and drawing. The function:</p>
 <ol type="1">
 <li>Extracts the list of rules, initial angle, number of iterations, and axiom from the input curve.</li>
 <li>Generate the full string of instructions by replacing characters in the string according to the <code>rules</code> with <code>gsubfn</code>.</li>
@@ -212,7 +211,289 @@ To help in the efficient drawing of this curve, I created a helper function call
 <span id="cb3-70"><a href="#cb3-70" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
+<section id="koch-snowflake" class="level3">
+<h3 class="anchored" data-anchor-id="koch-snowflake">Koch Snowflake</h3>
+<p>In the following code block, the curve “Koch Snowflake” is implemented. This pattern uses:</p>
+<ul>
+<li>Axiom <span class="math inline">\(F-F-F-F\)</span></li>
+<li>Transformation rule <span class="math inline">\(F \rightarrow F-F+F+FF-F-F+F\)</span>.</li>
+<li><span class="math inline">\(\delta\)</span> angle: <span class="math inline">\(90^{\circ}\)</span>.</li>
+</ul>
+<p>As the number of iterations increases, the complexity of the curve increases as seen in the short gif below where the original axiom and first four generations are shown.</p>
 <p><img src="Kochsnowflake.gif" class="img-fluid"></p>
+</section>
+<section id="sierpinski-triangle" class="level3">
+<h3 class="anchored" data-anchor-id="sierpinski-triangle">Sierpinski Triangle</h3>
+<section id="sierpinski-arrowhead" class="level4">
+<h4 class="anchored" data-anchor-id="sierpinski-arrowhead">Sierpinski Arrowhead</h4>
+<p>In the following, two iterations of the “Sierpinski Triangle” are implemented. The first pattern uses:</p>
+<ul>
+<li>Axiom: <span class="math inline">\(R\)</span></li>
+<li>Transformation rules: <span class="math inline">\(L\rightarrow R+L+R\)</span> &amp; <span class="math inline">\(R\rightarrow L-R-L\)</span></li>
+<li><span class="math inline">\(\delta\)</span> angle: <span class="math inline">\(60^{\circ}\)</span></li>
+</ul>
+<p>This pattern is alternatively known as the “Sierpinski Arrowhead Curve”.</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>curve_sierpinski <span class="ot">&lt;-</span> <span class="cf">function</span>(n) <span class="fu">list</span>(<span class="at">name =</span> <span class="st">"Sierpinski Triangle"</span>, </span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>                   <span class="at">axiom =</span> <span class="st">"R"</span>, </span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>                   <span class="at">rules =</span> <span class="fu">list</span>(<span class="st">"L"</span> <span class="ot">=</span> <span class="st">"R+L+R"</span>, <span class="st">"R"</span> <span class="ot">=</span> <span class="st">"L-R-L"</span>), </span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>                   <span class="at">angle =</span> <span class="dv">60</span>, </span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>                   <span class="at">n =</span> n, </span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>                   <span class="at">alpha0 =</span> <span class="dv">0</span>)</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="sc">!</span><span class="fu">file.exists</span>(<span class="st">"Sierpinskitriangle.gif"</span>)) {</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>p1 <span class="ot">&lt;-</span> <span class="fu">draw_l_curve</span>(<span class="fu">curve_sierpinski</span>(<span class="dv">0</span>))</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>p2 <span class="ot">&lt;-</span> <span class="fu">draw_l_curve</span>(<span class="fu">curve_sierpinski</span>(<span class="dv">2</span>))</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>p3 <span class="ot">&lt;-</span> <span class="fu">draw_l_curve</span>(<span class="fu">curve_sierpinski</span>(<span class="dv">4</span>))</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>p4 <span class="ot">&lt;-</span> <span class="fu">draw_l_curve</span>(<span class="fu">curve_sierpinski</span>(<span class="dv">6</span>))</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>p5 <span class="ot">&lt;-</span> <span class="fu">draw_l_curve</span>(<span class="fu">curve_sierpinski</span>(<span class="dv">8</span>))</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a><span class="co"># explicit</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>animation<span class="sc">::</span><span class="fu">saveGIF</span>(</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>  <span class="at">expr =</span> {</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>    <span class="fu">plot</span>(p1)</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>    <span class="fu">plot</span>(p2)</span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>    <span class="fu">plot</span>(p3)</span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>    <span class="fu">plot</span>(p4)</span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>    <span class="fu">plot</span>(p5)</span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>  },</span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>  <span class="at">movie.name =</span> <span class="st">"Sierpinskitriangle.gif"</span></span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p><img src="Sierpinskitriangle.gif" class="img-fluid"></p>
+</section>
+<section id="sierpinski-triangle-1" class="level4">
+<h4 class="anchored" data-anchor-id="sierpinski-triangle-1">Sierpinski Triangle</h4>
+<p>The classic implementation of the Sierpinski triangle is:</p>
+<ul>
+<li>Axiom: <span class="math inline">\(L-R-R\)</span></li>
+<li>Transformation rule: <span class="math inline">\(L \rightarrow L-R+L+R-L\)</span> and <span class="math inline">\(R \rightarrow RR\)</span></li>
+<li><span class="math inline">\(\delta\)</span> angle: <span class="math inline">\(120^{\circ}\)</span></li>
+</ul>
+<p>A main difference between this curve and the prior is in the construction. This rule uses two different commands for “forward” that both look identical in construction but are two types of edges - a “left” edge L and a “right” edge R.</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>curve_sierpinski2 <span class="ot">&lt;-</span> <span class="cf">function</span>(n) <span class="fu">list</span>(<span class="at">name =</span> <span class="st">"Sierpinski Triangle"</span>, </span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>                   <span class="at">axiom =</span> <span class="st">"L-R-R"</span>, </span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>                   <span class="at">rules =</span> <span class="fu">list</span>(<span class="st">"L"</span> <span class="ot">=</span> <span class="st">"L-R+L+R-L"</span>, <span class="st">"R"</span> <span class="ot">=</span> <span class="st">"RR"</span>), </span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>                   <span class="at">angle =</span> <span class="dv">120</span>, </span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>                   <span class="at">n =</span> n, </span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>                   <span class="at">alpha0 =</span> <span class="dv">0</span>)</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="sc">!</span><span class="fu">file.exists</span>(<span class="st">"Sierpinskitriangle2.gif"</span>)) {</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>p1 <span class="ot">&lt;-</span> <span class="fu">draw_l_curve</span>(<span class="fu">curve_sierpinski</span>(<span class="dv">0</span>))</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>p2 <span class="ot">&lt;-</span> <span class="fu">draw_l_curve</span>(<span class="fu">curve_sierpinski</span>(<span class="dv">1</span>))</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>p3 <span class="ot">&lt;-</span> <span class="fu">draw_l_curve</span>(<span class="fu">curve_sierpinski</span>(<span class="dv">2</span>))</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>p4 <span class="ot">&lt;-</span> <span class="fu">draw_l_curve</span>(<span class="fu">curve_sierpinski</span>(<span class="dv">3</span>))</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>p5 <span class="ot">&lt;-</span> <span class="fu">draw_l_curve</span>(<span class="fu">curve_sierpinski</span>(<span class="dv">4</span>))</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>p6 <span class="ot">&lt;-</span> <span class="fu">draw_l_curve</span>(<span class="fu">curve_sierpinski</span>(<span class="dv">5</span>))</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>p7 <span class="ot">&lt;-</span> <span class="fu">draw_l_curve</span>(<span class="fu">curve_sierpinski</span>(<span class="dv">6</span>))</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a><span class="co"># explicit</span></span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>animation<span class="sc">::</span><span class="fu">saveGIF</span>(</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>  <span class="at">expr =</span> {</span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>    <span class="fu">plot</span>(p1)</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>    <span class="fu">plot</span>(p2)</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>    <span class="fu">plot</span>(p3)</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>    <span class="fu">plot</span>(p4)</span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>    <span class="fu">plot</span>(p5)</span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>    <span class="fu">plot</span>(p6)</span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>    <span class="fu">plot</span>(p7)</span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>  },</span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>  <span class="at">movie.name =</span> <span class="st">"Sierpinskitriangle2.gif"</span></span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p><img src="Sierpinskitriangle2.gif" class="img-fluid"></p>
+</section>
+</section>
+<section id="fass-curves" class="level3">
+<h3 class="anchored" data-anchor-id="fass-curves">FASS Curves</h3>
+<p>FASS is an acronym for space-<strong>f</strong>illing, self-<strong>a</strong>voiding, <strong>s</strong>imple and self-<strong>s</strong>imilar curves. An example is:</p>
+<ul>
+<li>Axiom: <span class="math inline">\(L\)</span></li>
+<li>Transformation rules: <span class="math inline">\(L \rightarrow L+R++R-L--LL-R+\)</span> and $ R -L+RR++R+L–L-R$</li>
+<li><span class="math inline">\(\delta\)</span> angle: <span class="math inline">\(60^{\circ}\)</span></li>
+</ul>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>curve_FASS <span class="ot">&lt;-</span> <span class="cf">function</span>(n) <span class="fu">list</span>(<span class="at">name =</span> <span class="st">"Hexagonal Gasper"</span>, </span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>                   <span class="at">axiom =</span> <span class="st">"L"</span>, </span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>                   <span class="at">rules =</span> <span class="fu">list</span>(<span class="st">"L"</span> <span class="ot">=</span> <span class="st">"L+R++R-L--LL-R+"</span>, <span class="st">"R"</span> <span class="ot">=</span> <span class="st">"-L+RR++R+L--L-R"</span>), </span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>                   <span class="at">angle =</span> <span class="dv">60</span>, </span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>                   <span class="at">n =</span> n, </span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>                   <span class="at">alpha0 =</span> <span class="dv">0</span>)</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="sc">!</span><span class="fu">file.exists</span>(<span class="st">"Gasper.gif"</span>)) {</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>p1 <span class="ot">&lt;-</span> <span class="fu">draw_l_curve</span>(<span class="fu">curve_FASS</span>(<span class="dv">0</span>))</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>p2 <span class="ot">&lt;-</span> <span class="fu">draw_l_curve</span>(<span class="fu">curve_FASS</span>(<span class="dv">1</span>))</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>p3 <span class="ot">&lt;-</span> <span class="fu">draw_l_curve</span>(<span class="fu">curve_FASS</span>(<span class="dv">2</span>))</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>p4 <span class="ot">&lt;-</span> <span class="fu">draw_l_curve</span>(<span class="fu">curve_FASS</span>(<span class="dv">3</span>))</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>p5 <span class="ot">&lt;-</span> <span class="fu">draw_l_curve</span>(<span class="fu">curve_FASS</span>(<span class="dv">4</span>))</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>animation<span class="sc">::</span><span class="fu">saveGIF</span>(</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">expr =</span> {</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>    <span class="fu">plot</span>(p1)</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>    <span class="fu">plot</span>(p2)</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>    <span class="fu">plot</span>(p3)</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>    <span class="fu">plot</span>(p4)</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>    <span class="fu">plot</span>(p5)</span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>  },</span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>  <span class="at">movie.name =</span> <span class="st">"Gasper.gif"</span></span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p><img src="Gasper.gif" class="img-fluid"></p>
+</section>
+</section>
+<section id="branching-structures" class="level2">
+<h2 class="anchored" data-anchor-id="branching-structures">Branching Structures</h2>
+<p>So far, our turtle graphics have interpreted the string as a linear sequence of commands and the resulting line has always remained a single line. Perhaps segments are drawn over or even made invisible in some curves but it remains a single line. In this section, the generation is adapted to include branch structures by including the ability to revisit specific nodes from which a branch can grow.</p>
+<section id="bracketed-system" class="level3">
+<h3 class="anchored" data-anchor-id="bracketed-system">Bracketed System</h3>
+<p>There are different possible representation of this structure, but one that is straightforward to implement in R is the bracketed OL-system. This introduces two new symbols to the turtle graphic implementation:</p>
+<ol type="1">
+<li>[ Push the current state of the turtle to a stack saving position and orientation</li>
+<li>] Pop the state from the stack and make it the current state of the turtle. No line is drawn from prior state.</li>
+</ol>
+<p>This requires a rewriting of the <code>draw_l_system</code> function. This function does the same tasks as before but adds:<br>
+1. <code>pop_points</code> is a dataframe that saves the state of the turtle whenever a <code>[</code> is encountered 2. The actions list includes extra <code>if else</code> statement that whenever a <code>[</code> is encountered the current state is saved and whenever a <code>]</code> is encountered this state is set to the current state with a single row of <code>NA</code> beforehand to prevent a line from being plotted.</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>draw_l_curve2 <span class="ot">&lt;-</span> <span class="cf">function</span>(curve, <span class="at">c_bground =</span> <span class="st">"white"</span>, <span class="at">c_fractal =</span> <span class="st">"black"</span>) {</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Extract parameters of curve</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  rules <span class="ot">&lt;-</span> curve<span class="sc">$</span>rules; alpha0 <span class="ot">&lt;-</span> curve<span class="sc">$</span>alpha0; iterations <span class="ot">&lt;-</span> curve<span class="sc">$</span>n</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  axiom <span class="ot">&lt;-</span> curve<span class="sc">$</span>axiom</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Generate string of instructions</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (iterations <span class="sc">&gt;</span> <span class="dv">0</span>) {</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>iterations) axiom <span class="ot">&lt;-</span> <span class="fu">gsubfn</span>(<span class="st">"."</span>, <span class="at">replacement =</span> rules, axiom)</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    axiom</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Convert string of instructions to actions</span></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>  actions <span class="ot">&lt;-</span> <span class="fu">stri_extract_all</span>(axiom, <span class="at">regex =</span> <span class="st">"."</span>)[[<span class="dv">1</span>]]</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>  actions <span class="ot">&lt;-</span> actions[actions <span class="sc">!=</span> <span class="st">"X"</span>] <span class="co">#remove any remaining X</span></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>  points <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> <span class="dv">0</span>, <span class="at">y =</span> <span class="dv">0</span>, <span class="at">alpha =</span> alpha0, <span class="at">time =</span> <span class="dv">0</span>) <span class="co">#initialize pts</span></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>  pop_points <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> <span class="fu">numeric</span>(), <span class="at">y =</span> <span class="fu">numeric</span>(), <span class="at">alpha =</span> <span class="fu">numeric</span>(), <span class="at">pop =</span> <span class="fu">numeric</span>()) <span class="co"># stack to save pushed states</span></span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>  pop_lvl <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(actions)) {</span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (actions[i] <span class="sc">==</span> <span class="st">"F"</span> <span class="sc">|</span> actions[i] <span class="sc">==</span> <span class="st">"L"</span> <span class="sc">|</span> actions[i] <span class="sc">==</span> <span class="st">"R"</span>) {</span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>      x <span class="ot">&lt;-</span> points[<span class="fu">nrow</span>(points), <span class="st">"x"</span>] <span class="sc">+</span> <span class="fu">cos</span>(points[<span class="fu">nrow</span>(points), <span class="st">"alpha"</span>]<span class="sc">*</span>(pi<span class="sc">/</span><span class="dv">180</span>))</span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>      y <span class="ot">&lt;-</span> points[<span class="fu">nrow</span>(points), <span class="st">"y"</span>] <span class="sc">+</span> <span class="fu">sin</span>(points[<span class="fu">nrow</span>(points), <span class="st">"alpha"</span>]<span class="sc">*</span>(pi<span class="sc">/</span><span class="dv">180</span>))</span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>      alpha <span class="ot">&lt;-</span> points[<span class="fu">nrow</span>(points), <span class="st">"alpha"</span>]</span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>      points <span class="ot">&lt;-</span> <span class="fu">rbind</span>(points, <span class="fu">data.frame</span>(<span class="at">x=</span>x, <span class="at">y =</span> y, <span class="at">alpha =</span> alpha, <span class="at">time =</span> <span class="fu">nrow</span>(points)))</span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">else</span> <span class="cf">if</span> (actions[i] <span class="sc">==</span> <span class="st">"-"</span> <span class="sc">|</span> actions[i] <span class="sc">==</span> <span class="st">"+"</span>) {</span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a>      alpha <span class="ot">&lt;-</span> points[<span class="fu">nrow</span>(points), <span class="st">"alpha"</span>]</span>
+<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a>      points[<span class="fu">nrow</span>(points), <span class="st">"alpha"</span>] <span class="ot">&lt;-</span> <span class="fu">eval</span>(<span class="fu">parse</span>(<span class="at">text =</span> <span class="fu">paste0</span>(alpha, actions[i], curve<span class="sc">$</span>angle)))</span>
+<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">else</span> <span class="cf">if</span> (actions[i] <span class="sc">==</span> <span class="st">"["</span>) {</span>
+<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a>      pop_lvl <span class="ot">&lt;-</span> pop_lvl <span class="sc">+</span> <span class="dv">1</span></span>
+<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a>      pop_points[pop_lvl,] <span class="ot">&lt;-</span> <span class="fu">c</span>(points[<span class="fu">nrow</span>(points),<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>], <span class="at">pop =</span> pop_lvl)</span>
+<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">else</span> {</span>
+<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a>      tme <span class="ot">&lt;-</span> points[<span class="fu">nrow</span>(points), <span class="st">"time"</span>]</span>
+<span id="cb7-34"><a href="#cb7-34" aria-hidden="true" tabindex="-1"></a>      points <span class="ot">&lt;-</span> <span class="fu">rbind</span>(points, </span>
+<span id="cb7-35"><a href="#cb7-35" aria-hidden="true" tabindex="-1"></a>                      <span class="fu">c</span>(<span class="cn">NA</span>, <span class="cn">NA</span>, <span class="cn">NA</span>, tme <span class="sc">+</span> <span class="dv">1</span>), </span>
+<span id="cb7-36"><a href="#cb7-36" aria-hidden="true" tabindex="-1"></a>                      <span class="fu">c</span>(pop_points[pop_lvl, <span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>], <span class="at">time =</span> tme <span class="sc">+</span> <span class="dv">2</span>))</span>
+<span id="cb7-37"><a href="#cb7-37" aria-hidden="true" tabindex="-1"></a>      pop_lvl <span class="ot">&lt;-</span> pop_lvl <span class="sc">-</span> <span class="dv">1</span></span>
+<span id="cb7-38"><a href="#cb7-38" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb7-39"><a href="#cb7-39" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb7-40"><a href="#cb7-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-41"><a href="#cb7-41" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="at">data =</span> points, <span class="fu">aes</span>(x,y)) <span class="sc">+</span> </span>
+<span id="cb7-42"><a href="#cb7-42" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_path</span>(<span class="at">color =</span> c_fractal) <span class="sc">+</span> </span>
+<span id="cb7-43"><a href="#cb7-43" aria-hidden="true" tabindex="-1"></a>    <span class="fu">coord_fixed</span>() <span class="sc">+</span> </span>
+<span id="cb7-44"><a href="#cb7-44" aria-hidden="true" tabindex="-1"></a>    <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>, </span>
+<span id="cb7-45"><a href="#cb7-45" aria-hidden="true" tabindex="-1"></a>          <span class="at">panel.background =</span> <span class="fu">element_rect</span>(<span class="at">fill =</span> c_bground), </span>
+<span id="cb7-46"><a href="#cb7-46" aria-hidden="true" tabindex="-1"></a>          <span class="at">panel.grid =</span> <span class="fu">element_blank</span>(), </span>
+<span id="cb7-47"><a href="#cb7-47" aria-hidden="true" tabindex="-1"></a>          <span class="at">axis.ticks =</span> <span class="fu">element_blank</span>(), </span>
+<span id="cb7-48"><a href="#cb7-48" aria-hidden="true" tabindex="-1"></a>          <span class="at">axis.title =</span> <span class="fu">element_blank</span>(), </span>
+<span id="cb7-49"><a href="#cb7-49" aria-hidden="true" tabindex="-1"></a>          <span class="at">axis.text =</span> <span class="fu">element_blank</span>()) <span class="sc">+</span> </span>
+<span id="cb7-50"><a href="#cb7-50" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">subtitle =</span> <span class="fu">paste</span>(curve<span class="sc">$</span>name))</span>
+<span id="cb7-51"><a href="#cb7-51" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>The following figures were generated from plant rules included in “Algorithmic Beauty of Plants”:</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>curve <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="fu">list</span>(<span class="at">name =</span> <span class="st">"Plant A"</span>, </span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>                   <span class="at">axiom =</span> <span class="st">"F"</span>, </span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>                   <span class="at">rules =</span> <span class="fu">list</span>(<span class="st">"F"</span> <span class="ot">=</span> <span class="st">"F[+F]F[-F]F"</span>), </span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>                   <span class="at">angle =</span> <span class="fl">25.7</span>, </span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>                   <span class="at">n =</span> <span class="dv">5</span>, </span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>                   <span class="at">alpha0 =</span> <span class="dv">90</span>), </span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>              <span class="fu">list</span>(<span class="at">name =</span> <span class="st">"Plant B"</span>, </span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>                   <span class="at">axiom =</span> <span class="st">"F"</span>, </span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>                   <span class="at">rules =</span> <span class="fu">list</span>(<span class="st">"F"</span> <span class="ot">=</span> <span class="st">"F[+F]F[-F][F]"</span>), </span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>                   <span class="at">angle =</span> <span class="dv">20</span>, </span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>                   <span class="at">n =</span> <span class="dv">5</span>, </span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>                   <span class="at">alpha0 =</span> <span class="dv">90</span>),</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>              <span class="fu">list</span>(<span class="at">name =</span> <span class="st">"Plant C"</span>, </span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>                   <span class="at">axiom =</span> <span class="st">"F"</span>, </span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>                   <span class="at">rules =</span> <span class="fu">list</span>(<span class="st">"F"</span> <span class="ot">=</span> <span class="st">"FF-[-F+F+F]+[+F-F-F]"</span>), </span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>                   <span class="at">angle =</span> <span class="fl">22.5</span>, </span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>                   <span class="at">n =</span> <span class="dv">4</span>, </span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>                   <span class="at">alpha0 =</span> <span class="dv">90</span>), </span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>              <span class="fu">list</span>(<span class="at">name =</span> <span class="st">"Plant D"</span>, </span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>                   <span class="at">axiom =</span> <span class="st">"X"</span>, </span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>                   <span class="at">rules =</span> <span class="fu">list</span>(<span class="st">"X"</span> <span class="ot">=</span> <span class="st">"F[+X]F[-X]+X"</span>, </span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>                                <span class="st">"F"</span> <span class="ot">=</span> <span class="st">"FF"</span>), </span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>                   <span class="at">angle =</span> <span class="dv">20</span>, </span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>                   <span class="at">n =</span> <span class="dv">7</span>, </span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>                   <span class="at">alpha0 =</span> <span class="dv">90</span>), </span>
+<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a>              <span class="fu">list</span>(<span class="at">name =</span> <span class="st">"Plant E"</span>, </span>
+<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a>                   <span class="at">axiom =</span> <span class="st">"X"</span>, </span>
+<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a>                   <span class="at">rules =</span> <span class="fu">list</span>(<span class="st">"X"</span> <span class="ot">=</span> <span class="st">"F[+X][-X]FX"</span>, </span>
+<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a>                                <span class="st">"F"</span> <span class="ot">=</span> <span class="st">"FF"</span>), </span>
+<span id="cb8-30"><a href="#cb8-30" aria-hidden="true" tabindex="-1"></a>                   <span class="at">angle =</span> <span class="fl">25.7</span>, </span>
+<span id="cb8-31"><a href="#cb8-31" aria-hidden="true" tabindex="-1"></a>                   <span class="at">n =</span> <span class="dv">7</span>, </span>
+<span id="cb8-32"><a href="#cb8-32" aria-hidden="true" tabindex="-1"></a>                   <span class="at">alpha0 =</span> <span class="dv">90</span>), </span>
+<span id="cb8-33"><a href="#cb8-33" aria-hidden="true" tabindex="-1"></a>              <span class="fu">list</span>(<span class="at">name =</span> <span class="st">"Plant F"</span>, </span>
+<span id="cb8-34"><a href="#cb8-34" aria-hidden="true" tabindex="-1"></a>                   <span class="at">axiom =</span> <span class="st">"X"</span>, </span>
+<span id="cb8-35"><a href="#cb8-35" aria-hidden="true" tabindex="-1"></a>                   <span class="at">rules =</span> <span class="fu">list</span>(<span class="st">"X"</span> <span class="ot">=</span> <span class="st">"F-[[X]+X]+F[+FX]-X"</span>, </span>
+<span id="cb8-36"><a href="#cb8-36" aria-hidden="true" tabindex="-1"></a>                                <span class="st">"F"</span> <span class="ot">=</span> <span class="st">"FF"</span>), </span>
+<span id="cb8-37"><a href="#cb8-37" aria-hidden="true" tabindex="-1"></a>                   <span class="at">angle =</span> <span class="fl">22.5</span>, </span>
+<span id="cb8-38"><a href="#cb8-38" aria-hidden="true" tabindex="-1"></a>                   <span class="at">n =</span> <span class="dv">5</span>, </span>
+<span id="cb8-39"><a href="#cb8-39" aria-hidden="true" tabindex="-1"></a>                   <span class="at">alpha0 =</span> <span class="dv">90</span>)</span>
+<span id="cb8-40"><a href="#cb8-40" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb8-41"><a href="#cb8-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-42"><a href="#cb8-42" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="sc">!</span><span class="fu">file.exists</span>(<span class="st">"Plants1.gif"</span>)) {</span>
+<span id="cb8-43"><a href="#cb8-43" aria-hidden="true" tabindex="-1"></a>p1 <span class="ot">&lt;-</span> <span class="fu">draw_l_curve2</span>(curve[[<span class="dv">1</span>]])</span>
+<span id="cb8-44"><a href="#cb8-44" aria-hidden="true" tabindex="-1"></a>p2 <span class="ot">&lt;-</span> <span class="fu">draw_l_curve2</span>(curve[[<span class="dv">2</span>]])</span>
+<span id="cb8-45"><a href="#cb8-45" aria-hidden="true" tabindex="-1"></a>p3 <span class="ot">&lt;-</span> <span class="fu">draw_l_curve2</span>(curve[[<span class="dv">3</span>]])</span>
+<span id="cb8-46"><a href="#cb8-46" aria-hidden="true" tabindex="-1"></a>p4 <span class="ot">&lt;-</span> <span class="fu">draw_l_curve2</span>(curve[[<span class="dv">4</span>]])</span>
+<span id="cb8-47"><a href="#cb8-47" aria-hidden="true" tabindex="-1"></a>p5 <span class="ot">&lt;-</span> <span class="fu">draw_l_curve2</span>(curve[[<span class="dv">5</span>]])</span>
+<span id="cb8-48"><a href="#cb8-48" aria-hidden="true" tabindex="-1"></a>p6 <span class="ot">&lt;-</span> <span class="fu">draw_l_curve2</span>(curve[[<span class="dv">6</span>]])</span>
+<span id="cb8-49"><a href="#cb8-49" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-50"><a href="#cb8-50" aria-hidden="true" tabindex="-1"></a>animation<span class="sc">::</span><span class="fu">saveGIF</span>(</span>
+<span id="cb8-51"><a href="#cb8-51" aria-hidden="true" tabindex="-1"></a>  <span class="at">expr =</span> {</span>
+<span id="cb8-52"><a href="#cb8-52" aria-hidden="true" tabindex="-1"></a>    <span class="fu">plot</span>(p1)</span>
+<span id="cb8-53"><a href="#cb8-53" aria-hidden="true" tabindex="-1"></a>    <span class="fu">plot</span>(p2)</span>
+<span id="cb8-54"><a href="#cb8-54" aria-hidden="true" tabindex="-1"></a>    <span class="fu">plot</span>(p3)</span>
+<span id="cb8-55"><a href="#cb8-55" aria-hidden="true" tabindex="-1"></a>    <span class="fu">plot</span>(p4)</span>
+<span id="cb8-56"><a href="#cb8-56" aria-hidden="true" tabindex="-1"></a>    <span class="fu">plot</span>(p5)</span>
+<span id="cb8-57"><a href="#cb8-57" aria-hidden="true" tabindex="-1"></a>    <span class="fu">plot</span>(p6)</span>
+<span id="cb8-58"><a href="#cb8-58" aria-hidden="true" tabindex="-1"></a>  },</span>
+<span id="cb8-59"><a href="#cb8-59" aria-hidden="true" tabindex="-1"></a>  <span class="at">movie.name =</span> <span class="st">"Plants1.gif"</span>, </span>
+<span id="cb8-60"><a href="#cb8-60" aria-hidden="true" tabindex="-1"></a>  <span class="at">interval =</span> <span class="dv">2</span></span>
+<span id="cb8-61"><a href="#cb8-61" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb8-62"><a href="#cb8-62" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p><img src="Plants1.gif" class="img-fluid"></p>
+</section>
 </section>
 
 </main>

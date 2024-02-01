@@ -24,7 +24,6 @@ Given a step size and an angle increment, the turtle (represented by the state) 
 A more complicated set of symbols can be used but this is sufficient for some basic systems.  
 
 ## Basic R code implementation  
-In the following code block, the curve "Koch Snowflake" is implemented. This pattern uses the axiom $F-F-F-F$ and transformation rule $F \rightarrow F-F+F+FF-F-F+F$. The change in angle is $90^{\circ}$ and this particular iteration runs for two generations.  
 To help in the efficient drawing of this curve, I created a helper function called `draw_l_curve` that handles the computation and drawing. The function:  
 
 1. Extracts the list of rules, initial angle, number of iterations, and axiom from the input curve. 
@@ -110,4 +109,272 @@ animation::saveGIF(
 }
 ```
 
+### Koch Snowflake
+In the following code block, the curve "Koch Snowflake" is implemented. This pattern uses:  
+
+* Axiom $F-F-F-F$
+* Transformation rule $F \rightarrow F-F+F+FF-F-F+F$. 
+* $\delta$ angle: $90^{\circ}$.  
+
+As the number of iterations increases, the complexity of the curve increases as seen in the short gif below where the original axiom and first four generations are shown.  
+
 ![](Kochsnowflake.gif)
+
+### Sierpinski Triangle  
+#### Sierpinski Arrowhead
+In the following, two iterations of the "Sierpinski Triangle" are implemented. The first pattern uses: 
+
+* Axiom: $R$ 
+* Transformation rules: $L\rightarrow R+L+R$ & $R\rightarrow L-R-L$
+* $\delta$ angle: $60^{\circ}$
+
+This pattern is alternatively known as the "Sierpinski Arrowhead Curve". 
+
+```{r}
+curve_sierpinski <- function(n) list(name = "Sierpinski Triangle", 
+                   axiom = "R", 
+                   rules = list("L" = "R+L+R", "R" = "L-R-L"), 
+                   angle = 60, 
+                   n = n, 
+                   alpha0 = 0)
+
+if(!file.exists("Sierpinskitriangle.gif")) {
+p1 <- draw_l_curve(curve_sierpinski(0))
+p2 <- draw_l_curve(curve_sierpinski(2))
+p3 <- draw_l_curve(curve_sierpinski(4))
+p4 <- draw_l_curve(curve_sierpinski(6))
+p5 <- draw_l_curve(curve_sierpinski(8))
+
+
+# explicit
+animation::saveGIF(
+  expr = {
+    plot(p1)
+    plot(p2)
+    plot(p3)
+    plot(p4)
+    plot(p5)
+  },
+  movie.name = "Sierpinskitriangle.gif"
+)
+}
+```
+![](Sierpinskitriangle.gif)
+
+#### Sierpinski Triangle  
+The classic implementation of the Sierpinski triangle is: 
+
+* Axiom: $L-R-R$
+* Transformation rule: $L \rightarrow L-R+L+R-L$ and $R \rightarrow RR$
+* $\delta$ angle: $120^{\circ}$
+
+A main difference between this curve and the prior is in the construction. This rule uses two different commands for "forward" that both look identical in construction but are two types of edges - a "left" edge L and a "right" edge R. 
+
+```{r}
+curve_sierpinski2 <- function(n) list(name = "Sierpinski Triangle", 
+                   axiom = "L-R-R", 
+                   rules = list("L" = "L-R+L+R-L", "R" = "RR"), 
+                   angle = 120, 
+                   n = n, 
+                   alpha0 = 0)
+
+if(!file.exists("Sierpinskitriangle2.gif")) {
+p1 <- draw_l_curve(curve_sierpinski(0))
+p2 <- draw_l_curve(curve_sierpinski(1))
+p3 <- draw_l_curve(curve_sierpinski(2))
+p4 <- draw_l_curve(curve_sierpinski(3))
+p5 <- draw_l_curve(curve_sierpinski(4))
+p6 <- draw_l_curve(curve_sierpinski(5))
+p7 <- draw_l_curve(curve_sierpinski(6))
+
+
+# explicit
+animation::saveGIF(
+  expr = {
+    plot(p1)
+    plot(p2)
+    plot(p3)
+    plot(p4)
+    plot(p5)
+    plot(p6)
+    plot(p7)
+  },
+  movie.name = "Sierpinskitriangle2.gif"
+)
+}
+```
+
+![](Sierpinskitriangle2.gif)
+
+### FASS Curves  
+FASS is an acronym for space-**f**illing, self-**a**voiding, **s**imple and self-**s**imilar curves. An example is:  
+
+* Axiom: $L$
+* Transformation rules: $L \rightarrow L+R++R-L--LL-R+$ and $ R \rightarrow -L+RR++R+L--L-R$
+* $\delta$ angle: $60^{\circ}$
+
+```{r}
+curve_FASS <- function(n) list(name = "Hexagonal Gasper", 
+                   axiom = "L", 
+                   rules = list("L" = "L+R++R-L--LL-R+", "R" = "-L+RR++R+L--L-R"), 
+                   angle = 60, 
+                   n = n, 
+                   alpha0 = 0)
+
+if(!file.exists("Gasper.gif")) {
+p1 <- draw_l_curve(curve_FASS(0))
+p2 <- draw_l_curve(curve_FASS(1))
+p3 <- draw_l_curve(curve_FASS(2))
+p4 <- draw_l_curve(curve_FASS(3))
+p5 <- draw_l_curve(curve_FASS(4))
+
+animation::saveGIF(
+  expr = {
+    plot(p1)
+    plot(p2)
+    plot(p3)
+    plot(p4)
+    plot(p5)
+  },
+  movie.name = "Gasper.gif"
+)
+}
+```
+
+![](Gasper.gif)
+
+## Branching Structures  
+So far, our turtle graphics have interpreted the string as a linear sequence of commands and the resulting line has always remained a single line. Perhaps segments are drawn over or even made invisible in some curves but it remains a single line. In this section, the generation is adapted to include branch structures by including the ability to revisit specific nodes from which a branch can grow. 
+
+### Bracketed System  
+There are different possible representation of this structure, but one that is straightforward to implement in R is the bracketed OL-system. This introduces two new symbols to the turtle graphic implementation:  
+
+1. [ Push the current state of the turtle to a stack saving position and orientation
+2. ] Pop the state from the stack and make it the current state of the turtle. No line is drawn from prior state. 
+
+This requires a rewriting of the `draw_l_system` function. This function does the same tasks as before but adds:  
+1. `pop_points` is a dataframe that saves the state of the turtle whenever a `[` is encountered
+2. The actions list includes extra `if else` statement that whenever a `[` is encountered the current state is saved and whenever a `]` is encountered this state is set to the current state with a single row of `NA` beforehand to prevent a line from being plotted. 
+
+```{r}
+draw_l_curve2 <- function(curve, c_bground = "white", c_fractal = "black") {
+  # Extract parameters of curve
+  rules <- curve$rules; alpha0 <- curve$alpha0; iterations <- curve$n
+  axiom <- curve$axiom
+  
+  # Generate string of instructions
+  if (iterations > 0) {
+    for (i in 1:iterations) axiom <- gsubfn(".", replacement = rules, axiom)
+  } else {
+    axiom
+  }
+  
+  # Convert string of instructions to actions
+  actions <- stri_extract_all(axiom, regex = ".")[[1]]
+  actions <- actions[actions != "X"] #remove any remaining X
+  points <- data.frame(x = 0, y = 0, alpha = alpha0, time = 0) #initialize pts
+  pop_points <- data.frame(x = numeric(), y = numeric(), alpha = numeric(), pop = numeric()) # stack to save pushed states
+  pop_lvl <- 0
+  
+  for (i in 1:length(actions)) {
+    if (actions[i] == "F" | actions[i] == "L" | actions[i] == "R") {
+      x <- points[nrow(points), "x"] + cos(points[nrow(points), "alpha"]*(pi/180))
+      y <- points[nrow(points), "y"] + sin(points[nrow(points), "alpha"]*(pi/180))
+      alpha <- points[nrow(points), "alpha"]
+      points <- rbind(points, data.frame(x=x, y = y, alpha = alpha, time = nrow(points)))
+    } else if (actions[i] == "-" | actions[i] == "+") {
+      alpha <- points[nrow(points), "alpha"]
+      points[nrow(points), "alpha"] <- eval(parse(text = paste0(alpha, actions[i], curve$angle)))
+    } else if (actions[i] == "[") {
+      pop_lvl <- pop_lvl + 1
+      pop_points[pop_lvl,] <- c(points[nrow(points),1:3], pop = pop_lvl)
+    } else {
+      tme <- points[nrow(points), "time"]
+      points <- rbind(points, 
+                      c(NA, NA, NA, tme + 1), 
+                      c(pop_points[pop_lvl, 1:3], time = tme + 2))
+      pop_lvl <- pop_lvl - 1
+    }
+  }
+
+  ggplot(data = points, aes(x,y)) + 
+    geom_path(color = c_fractal) + 
+    coord_fixed() + 
+    theme(legend.position = "none", 
+          panel.background = element_rect(fill = c_bground), 
+          panel.grid = element_blank(), 
+          axis.ticks = element_blank(), 
+          axis.title = element_blank(), 
+          axis.text = element_blank()) + 
+    labs(subtitle = paste(curve$name))
+}
+```
+
+The following figures were generated from plant rules included in "Algorithmic Beauty of Plants": 
+
+```{r}
+curve <- list(list(name = "Plant A", 
+                   axiom = "F", 
+                   rules = list("F" = "F[+F]F[-F]F"), 
+                   angle = 25.7, 
+                   n = 5, 
+                   alpha0 = 90), 
+              list(name = "Plant B", 
+                   axiom = "F", 
+                   rules = list("F" = "F[+F]F[-F][F]"), 
+                   angle = 20, 
+                   n = 5, 
+                   alpha0 = 90),
+              list(name = "Plant C", 
+                   axiom = "F", 
+                   rules = list("F" = "FF-[-F+F+F]+[+F-F-F]"), 
+                   angle = 22.5, 
+                   n = 4, 
+                   alpha0 = 90), 
+              list(name = "Plant D", 
+                   axiom = "X", 
+                   rules = list("X" = "F[+X]F[-X]+X", 
+                                "F" = "FF"), 
+                   angle = 20, 
+                   n = 7, 
+                   alpha0 = 90), 
+              list(name = "Plant E", 
+                   axiom = "X", 
+                   rules = list("X" = "F[+X][-X]FX", 
+                                "F" = "FF"), 
+                   angle = 25.7, 
+                   n = 7, 
+                   alpha0 = 90), 
+              list(name = "Plant F", 
+                   axiom = "X", 
+                   rules = list("X" = "F-[[X]+X]+F[+FX]-X", 
+                                "F" = "FF"), 
+                   angle = 22.5, 
+                   n = 5, 
+                   alpha0 = 90)
+)
+
+if(!file.exists("Plants1.gif")) {
+p1 <- draw_l_curve2(curve[[1]])
+p2 <- draw_l_curve2(curve[[2]])
+p3 <- draw_l_curve2(curve[[3]])
+p4 <- draw_l_curve2(curve[[4]])
+p5 <- draw_l_curve2(curve[[5]])
+p6 <- draw_l_curve2(curve[[6]])
+
+animation::saveGIF(
+  expr = {
+    plot(p1)
+    plot(p2)
+    plot(p3)
+    plot(p4)
+    plot(p5)
+    plot(p6)
+  },
+  movie.name = "Plants1.gif", 
+  interval = 2
+)
+}
+```
+
+![](Plants1.gif)
