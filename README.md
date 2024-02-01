@@ -12,3 +12,5 @@ Within this repository, I'll be publishing various implementations of mathematic
 <a href="Brief%20SFTC%20extension.html">Brief Second Fundamental Theorem of Calculus Extension</a>
 <br>
 <a href = "Boolean%20Algebra.html">Boolean Algebra Introduction</a>
+<br>
+<a href = "Bayes_Theorem.html">Bayes Theorem Introduction</a>
