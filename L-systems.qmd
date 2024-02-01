@@ -1,6 +1,8 @@
 ---
 title: "L-System Fractals"
-format: html
+format: 
+  html: 
+    code-fold: true
 ---
 
 ## Lindenmayer Systems  
@@ -83,16 +85,16 @@ draw_l_curve <- function(curve, c_bground = "white", c_fractal = "black") {
           panel.grid = element_blank(), 
           axis.ticks = element_blank(), 
           axis.title = element_blank(), 
-          axis.text = element_blank())
+          axis.text = element_blank()) + 
+    labs(subtitle = paste("Iterations: ", iterations))
 }
 
+if(!file.exists("Kochsnowflake.gif")) {
 p1 <- draw_l_curve(curve(0))
 p2 <- draw_l_curve(curve(1))
 p3 <- draw_l_curve(curve(2))
 p4 <- draw_l_curve(curve(3))
 p5 <- draw_l_curve(curve(4))
-
-library(animation)
 
 # explicit
 animation::saveGIF(
@@ -103,7 +105,9 @@ animation::saveGIF(
     plot(p4)
     plot(p5)
   },
-  movie.name = "explicit_my3.gif"
+  movie.name = "Kochsnowflake.gif"
 )
+}
 ```
 
+![](Kochsnowflake.gif)
