@@ -400,7 +400,7 @@ hex_grid_populate <- function(hex_grid, scale = 1) {
 }
 
 # Make function to project the input grid onto sphere
-hex_grid_projection <- function(hex_grid) {
+hex_grid_projection <- function(hex_grid, include_grid = TRUE) {
   n <- nrow(hex_grid) # find number of points
   # Create empty dataframe of same size so R doesn't have to reassign memory
   pts <- data.frame(x = rep(NA, n), 
@@ -418,25 +418,27 @@ hex_grid_projection <- function(hex_grid) {
     pts[i,3] <- (R^2 - 1) / (R^2 + 1)
   }
   # Add grid to list of points
+  if(include_grid) {
   pts <- rbind(pts, hex_grid)
+  } else {
+    pts
+  }
 } 
 
-full_hex_generator <- function(n = 1, size = 1, scale = 1) {
+full_hex_generator <- function(n = 1, size = 1, scale = 1, include_grid = TRUE) {
   n %>%
   make_grid() %>%
   qr_xy_convert(size = size) %>%
   center_three() %>%
   hex_grid_populate(scale = scale) %>%
-  hex_grid_projection() 
+  hex_grid_projection(include_grid) 
 }
 ```
 
 ```{r generate hex grid, webgl=TRUE}
-pts <- full_hex_generator(n = 7, size = .2, scale = .7)
+pts <- full_hex_generator(n = 4, size = .8, scale = .7, include_grid = FALSE)
 
 open3d(silent = TRUE)
-with(pts, plot3d(x, y, z, asp = "iso"))
-
 ```
 
 ## Sphere for My Kids

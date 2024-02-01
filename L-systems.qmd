@@ -1,0 +1,109 @@
+---
+title: "L-System Fractals"
+format: html
+---
+
+## Lindenmayer Systems  
+In my investigation of fractals that I wrote up in IFS Fractals, I came across a way of generating fractals named Lindenmayer Systems, or L-systems for short. The fantastic book [Algorithmic Beauty of Plants](http://algorithmicbotany.org/papers/abop/abop.pdf) by Prusinkiewicz and Lindenmayer gives a thorough examination of this generation method. This generation was developed as a mathematical theory of plant development and a geometric interpetation of L-systems turned them into a tool of plant modeling.  
+The concept of L-systems is based on rewriting where parts of a simple initial object are replaced using a set of rewriting rules. A classic example of this is the Koch Snowflake where an intitial equilateral triangle has its sides replaced with a new bent line segment. This is repeated till the classic Snowflake appears.  
+
+### DOL-systems  
+These are the simplest L-systems; deterministic and context-free. The following example is from "Algorithmic Beauty of Plants":  
+"Consider strings (words) built of two letters *a* and *b*, which may occur many times in a string. Each letter is associated with a rewriting rule. The rule $a \rightarrow ab$ means that the letter *a* is to be replaced by the string *ab*, and the rule $b \rightarrow a$ means that the letter *b* is to be replaced by *a*. This rewriting process starts from a distinguished string called the axiom. Assume that it consists of a single letter *b*. In the first derivation step, the axiom *b* is replaced by *a* using $b \rightarrow a$. In the second step *a* is replaced by *ab*. THe word *ab* consists of two letters, both of which are *simultaneously* replaced in the next derivation step. Thus, *a* is replaced by *ab*, *b* is replaced by *a*, and the string *aba* results. In a similar way, the string *aba* yields *abaab* which in turn yields *abaababa*, then *abaababaabaab* and so on.  
+
+### Turtle interpretation of strings  
+The geometric interpretation of strings is simple: turtle graphics. The ideas is that the string can be turned into a set of instructions for a "turtle" where each character in the string carries meaning to change the state of the turtle. For two dimensional structures, the state of the turtle is given as $(x, y, \alpha)$ where *x* and *y* are the Cartesian coordinates and $\alpha$ is the turtles heading.  
+Given a step size and an angle increment, the turtle (represented by the state) can respond to a set of basic symbols such as:  
+
+* F/L/R: move forward step length *d*, drawing a line from start to end point. This is achieved by changing the state of the turtle from $(x,y,\alpha)$ to $(x', y', \alpha)$ where $x'=x+d\cos{\alpha}$ and $y'=y+d\sin{/alpha}$. 
+* +: turn left by angle $\delta$. The new state is $(x,y,\alpha + \delta)$
+* -: turn right by angle $\delta$. The new state is $(x,y,\alpha - \delta)$  
+
+A more complicated set of symbols can be used but this is sufficient for some basic systems.  
+
+## Basic R code implementation  
+In the following code block, the curve "Koch Snowflake" is implemented. This pattern uses the axiom $F-F-F-F$ and transformation rule $F \rightarrow F-F+F+FF-F-F+F$. The change in angle is $90^{\circ}$ and this particular iteration runs for two generations.  
+To help in the efficient drawing of this curve, I created a helper function called `draw_l_curve` that handles the computation and drawing. The function:  
+
+1. Extracts the list of rules, initial angle, number of iterations, and axiom from the input curve. 
+2. Generate the full string of instructions by replacing characters in the string according to the `rules` with `gsubfn`. 
+3. Splits the string of instructions by each character to a list of actions
+4. Initialize the start point and run through the list of instructions changing the state of the turtle for each step. 
+5. Plot the resulting set of points with a line graph. 
+
+
+```{r}
+library(stringi)
+library(ggplot2)
+library(gsubfn)
+library(gganimate)
+
+curve <- function(n) {list(name = "Koch Island",
+                   axiom = "F-F-F-F",
+                   rules = list("F" = "F-F+F+FF-F-F+F"),
+                   angle = 90,
+                   n = n,
+                   alpha0 = 90)}
+
+draw_l_curve <- function(curve, c_bground = "white", c_fractal = "black") {
+  # Extract parameters of curve
+  rules <- curve$rules; alpha0 <- curve$alpha0; iterations <- curve$n
+  axiom <- curve$axiom
+  
+  # Generate string of instructions
+  
+  if (iterations > 0) {
+    for (i in 1:iterations) axiom <- gsubfn(".", replacement = rules, axiom)
+  } else {
+    axiom
+  }
+  
+  
+  actions <- stri_extract_all(axiom, regex = ".")[[1]]
+  actions <- actions[actions != "X"]
+  points <- data.frame(x = 0, y = 0, alpha = alpha0, time = 0)
+  
+  for (i in 1:length(actions)) {
+    if (actions[i] == "F" | actions[i] == "L" | actions[i] == "R") {
+      x <- points[nrow(points), "x"] + cos(points[nrow(points), "alpha"]*(pi/180))
+      y <- points[nrow(points), "y"] + sin(points[nrow(points), "alpha"]*(pi/180))
+      alpha <- points[nrow(points), "alpha"]
+      points <- rbind(points, data.frame(x=x, y = y, alpha = alpha, time = nrow(points)))
+    } else if (actions[i] == "-" | actions[i] == "+") {
+      alpha <- points[nrow(points), "alpha"]
+      points[nrow(points), "alpha"] <- eval(parse(text = paste0(alpha, actions[i], curve$angle)))
+    }
+  }
+
+  ggplot(data = points, aes(x,y)) + 
+    geom_path(color = c_fractal) + 
+    coord_fixed() + 
+    theme(legend.position = "none", 
+          panel.background = element_rect(fill = c_bground), 
+          panel.grid = element_blank(), 
+          axis.ticks = element_blank(), 
+          axis.title = element_blank(), 
+          axis.text = element_blank())
+}
+
+p1 <- draw_l_curve(curve(0))
+p2 <- draw_l_curve(curve(1))
+p3 <- draw_l_curve(curve(2))
+p4 <- draw_l_curve(curve(3))
+p5 <- draw_l_curve(curve(4))
+
+library(animation)
+
+# explicit
+animation::saveGIF(
+  expr = {
+    plot(p1)
+    plot(p2)
+    plot(p3)
+    plot(p4)
+    plot(p5)
+  },
+  movie.name = "explicit_my3.gif"
+)
+```
+

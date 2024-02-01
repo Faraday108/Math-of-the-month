@@ -1,0 +1,24 @@
+<!DOCTYPE MeshLabDocument>
+<MeshLabProject>
+ <MeshGroup>
+  <MLMesh label="hexprojection.xyz" visible="0" idInFile="-1" filename="hexprojection.stl">
+   <MLMatrix44>
+1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 
+</MLMatrix44>
+   <RenderingOption boxColor="234 234 234 255" wireWidth="1" wireColor="64 64 64 255" solidColor="192 192 192 255" pointColor="252 233 79 255" pointSize="3">100001000000000000000100000001011100000010100000000100111011110000000001</RenderingOption>
+  </MLMesh>
+  <MLMesh label="hexprojection.xyz_copy" visible="0" idInFile="-1" filename="hexprojection.ply">
+   <MLMatrix44>
+1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 
+</MLMatrix44>
+   <RenderingOption boxColor="234 234 234 255" wireWidth="1" wireColor="64 64 64 255" solidColor="192 192 192 255" pointColor="252 233 79 255" pointSize="3">100001000000000000000100000001011100000010100000000100111011110000000001</RenderingOption>
+  </MLMesh>
+  <MLMesh label="hexprojection.xyz_copy_copy" visible="1" idInFile="-1" filename="hexprojection2.ply">
+   <MLMatrix44>
+1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 
+</MLMatrix44>
+   <RenderingOption boxColor="234 234 234 255" wireWidth="1" wireColor="64 64 64 255" solidColor="192 192 192 255" pointColor="252 233 79 255" pointSize="3">100001000000000000000100000001010100000010100000000100011011110000000001</RenderingOption>
+  </MLMesh>
+ </MeshGroup>
+ <RasterGroup/>
+</MeshLabProject>
