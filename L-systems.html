@@ -98,12 +98,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <section id="lindenmayer-systems" class="level2">
 <h2 class="anchored" data-anchor-id="lindenmayer-systems">Lindenmayer Systems</h2>
-<p>In my investigation of fractals that I wrote up in IFS Fractals, I came across a way of generating fractals named Lindenmayer Systems, or L-systems for short. The fantastic book <a href="http://algorithmicbotany.org/papers/abop/abop.pdf">Algorithmic Beauty of Plants</a> by Prusinkiewicz and Lindenmayer gives a thorough examination of this generation method. This generation was developed as a mathematical theory of plant development and a geometric interpetation of L-systems turned them into a tool of plant modeling.<br>
-The concept of L-systems is based on rewriting where parts of a simple initial object are replaced using a set of rewriting rules. A classic example of this is the Koch Snowflake where an intitial equilateral triangle has its sides replaced with a new bent line segment. This is repeated till the classic Snowflake appears.</p>
+<p>In my investigation of fractals that I wrote up in IFS Fractals, I came across a way of generating fractals named Lindenmayer Systems, or L-systems for short. The fantastic book <a href="http://algorithmicbotany.org/papers/abop/abop.pdf">Algorithmic Beauty of Plants</a> by Prusinkiewicz and Lindenmayer gives a thorough examination of this generation method. This generation was developed as a mathematical theory of plant development and a geometric interpretation of L-systems turned them into a tool of plant modeling.<br>
+The concept of L-systems is based on rewriting where parts of a simple initial object are replaced using a set of rewriting rules. A classic example of this is the Koch Snowflake where an initial equilateral triangle has its sides replaced with a new bent line segment. This is repeated till the classic Snowflake appears.</p>
 <section id="dol-systems" class="level3">
 <h3 class="anchored" data-anchor-id="dol-systems">DOL-systems</h3>
 <p>These are the simplest L-systems; deterministic and context-free. The following example is from “Algorithmic Beauty of Plants”:<br>
 “Consider strings (words) built of two letters <em>a</em> and <em>b</em>, which may occur many times in a string. Each letter is associated with a rewriting rule. The rule <span class="math inline">\(a \rightarrow ab\)</span> means that the letter <em>a</em> is to be replaced by the string <em>ab</em>, and the rule <span class="math inline">\(b \rightarrow a\)</span> means that the letter <em>b</em> is to be replaced by <em>a</em>. This rewriting process starts from a distinguished string called the axiom. Assume that it consists of a single letter <em>b</em>. In the first derivation step, the axiom <em>b</em> is replaced by <em>a</em> using <span class="math inline">\(b \rightarrow a\)</span>. In the second step <em>a</em> is replaced by <em>ab</em>. THe word <em>ab</em> consists of two letters, both of which are <em>simultaneously</em> replaced in the next derivation step. Thus, <em>a</em> is replaced by <em>ab</em>, <em>b</em> is replaced by <em>a</em>, and the string <em>aba</em> results. In a similar way, the string <em>aba</em> yields <em>abaab</em> which in turn yields <em>abaababa</em>, then <em>abaababaabaab</em> and so on.</p>
+<p>A point on the naming of this type of system. These are described as Deterministic Context-Free systems. In the context of a language class, a <a href="https://en.wikipedia.org/wiki/Context-free_grammar">context-free</a> grammar (denoted OL-system in Algorithmic Beauty) is a transformation where a letter is replaced without regard to what other letters are surrounding it. On the other hand, a <a href="https://en.wikipedia.org/wiki/Context-sensitive_grammar">context-sensitive</a> grammar (denoted IL-system in Algorithmic Beauty) looks at the surrounding structure. For example, the rule <span class="math inline">\(xAy \rightarrow xBBy\)</span> looks for the structure <span class="math inline">\(A\)</span> and will replace it with <span class="math inline">\(BB\)</span> if <span class="math inline">\(A\)</span> is in the context <span class="math inline">\(xAy\)</span>.</p>
 </section>
 <section id="turtle-interpretation-of-strings" class="level3">
 <h3 class="anchored" data-anchor-id="turtle-interpretation-of-strings">Turtle interpretation of strings</h3>
@@ -129,7 +130,7 @@ Given a step size and an angle increment, the turtle (represented by the state) 
 </ol>
 <div class="cell">
 <details>
-<summary>Code</summary>
+<summary>Code: L-system and Koch Snowflake</summary>
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(stringi)</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(gsubfn)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -138,7 +139,7 @@ Given a step size and an angle increment, the turtle (represented by the state) 
 <pre><code>Loading required package: proto</code></pre>
 </div>
 <details>
-<summary>Code</summary>
+<summary>Code: L-system and Koch Snowflake</summary>
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(gganimate)</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>curve <span class="ot">&lt;-</span> <span class="cf">function</span>(n) {<span class="fu">list</span>(<span class="at">name =</span> <span class="st">"Koch Island"</span>,</span>
@@ -235,8 +236,8 @@ Given a step size and an angle increment, the turtle (represented by the state) 
 <p>This pattern is alternatively known as the “Sierpinski Arrowhead Curve”.</p>
 <div class="cell">
 <details>
-<summary>Code</summary>
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>curve_sierpinski <span class="ot">&lt;-</span> <span class="cf">function</span>(n) <span class="fu">list</span>(<span class="at">name =</span> <span class="st">"Sierpinski Triangle"</span>, </span>
+<summary>Code: Generate Sierpinski Arrowhead</summary>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>curve_sierpinski <span class="ot">&lt;-</span> <span class="cf">function</span>(n) <span class="fu">list</span>(<span class="at">name =</span> <span class="st">"Sierpinski Arrowhead"</span>, </span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>                   <span class="at">axiom =</span> <span class="st">"R"</span>, </span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>                   <span class="at">rules =</span> <span class="fu">list</span>(<span class="st">"L"</span> <span class="ot">=</span> <span class="st">"R+L+R"</span>, <span class="st">"R"</span> <span class="ot">=</span> <span class="st">"L-R-L"</span>), </span>
 <span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>                   <span class="at">angle =</span> <span class="dv">60</span>, </span>
@@ -278,7 +279,7 @@ Given a step size and an angle increment, the turtle (represented by the state) 
 <p>A main difference between this curve and the prior is in the construction. This rule uses two different commands for “forward” that both look identical in construction but are two types of edges - a “left” edge L and a “right” edge R.</p>
 <div class="cell">
 <details>
-<summary>Code</summary>
+<summary>Code: Generate Sierpinski Triangle</summary>
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>curve_sierpinski2 <span class="ot">&lt;-</span> <span class="cf">function</span>(n) <span class="fu">list</span>(<span class="at">name =</span> <span class="st">"Sierpinski Triangle"</span>, </span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>                   <span class="at">axiom =</span> <span class="st">"L-R-R"</span>, </span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>                   <span class="at">rules =</span> <span class="fu">list</span>(<span class="st">"L"</span> <span class="ot">=</span> <span class="st">"L-R+L+R-L"</span>, <span class="st">"R"</span> <span class="ot">=</span> <span class="st">"RR"</span>), </span>
@@ -320,12 +321,16 @@ Given a step size and an angle increment, the turtle (represented by the state) 
 <p>FASS is an acronym for space-<strong>f</strong>illing, self-<strong>a</strong>voiding, <strong>s</strong>imple and self-<strong>s</strong>imilar curves. An example is:</p>
 <ul>
 <li>Axiom: <span class="math inline">\(L\)</span></li>
-<li>Transformation rules: <span class="math inline">\(L \rightarrow L+R++R-L--LL-R+\)</span> and $ R -L+RR++R+L–L-R$</li>
+<li>Transformation rules:
+<ul>
+<li><span class="math inline">\(L \rightarrow L+R++R-L--LL-R+\)</span></li>
+<li><span class="math inline">\(R \rightarrow -L+RR++R+L--L-R\)</span></li>
+</ul></li>
 <li><span class="math inline">\(\delta\)</span> angle: <span class="math inline">\(60^{\circ}\)</span></li>
 </ul>
 <div class="cell">
 <details>
-<summary>Code</summary>
+<summary>Code: Generate FASS</summary>
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>curve_FASS <span class="ot">&lt;-</span> <span class="cf">function</span>(n) <span class="fu">list</span>(<span class="at">name =</span> <span class="st">"Hexagonal Gasper"</span>, </span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>                   <span class="at">axiom =</span> <span class="st">"L"</span>, </span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>                   <span class="at">rules =</span> <span class="fu">list</span>(<span class="st">"L"</span> <span class="ot">=</span> <span class="st">"L+R++R-L--LL-R+"</span>, <span class="st">"R"</span> <span class="ot">=</span> <span class="st">"-L+RR++R+L--L-R"</span>), </span>
@@ -363,14 +368,19 @@ Given a step size and an angle increment, the turtle (represented by the state) 
 <h3 class="anchored" data-anchor-id="bracketed-system">Bracketed System</h3>
 <p>There are different possible representation of this structure, but one that is straightforward to implement in R is the bracketed OL-system. This introduces two new symbols to the turtle graphic implementation:</p>
 <ol type="1">
-<li>[ Push the current state of the turtle to a stack saving position and orientation</li>
+<li>[ Push the current state of the turtle to a stack saving position and orientation<br>
+</li>
 <li>] Pop the state from the stack and make it the current state of the turtle. No line is drawn from prior state.</li>
 </ol>
-<p>This requires a rewriting of the <code>draw_l_system</code> function. This function does the same tasks as before but adds:<br>
-1. <code>pop_points</code> is a dataframe that saves the state of the turtle whenever a <code>[</code> is encountered 2. The actions list includes extra <code>if else</code> statement that whenever a <code>[</code> is encountered the current state is saved and whenever a <code>]</code> is encountered this state is set to the current state with a single row of <code>NA</code> beforehand to prevent a line from being plotted.</p>
+<p>This requires a rewriting of the <code>draw_l_system</code> function. This function does the same tasks as before but adds:</p>
+<ol type="1">
+<li><code>pop_points</code> is a dataframe that saves the state of the turtle whenever a <code>[</code> is encountered<br>
+</li>
+<li>The actions list includes extra <code>if else</code> statement that whenever a <code>[</code> is encountered the current state is saved and whenever a <code>]</code> is encountered this state is set to the current state with a single row of <code>NA</code> beforehand to prevent a line from being plotted.</li>
+</ol>
 <div class="cell">
 <details>
-<summary>Code</summary>
+<summary>Code: Bracketed L-system</summary>
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>draw_l_curve2 <span class="ot">&lt;-</span> <span class="cf">function</span>(curve, <span class="at">c_bground =</span> <span class="st">"white"</span>, <span class="at">c_fractal =</span> <span class="st">"black"</span>) {</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Extract parameters of curve</span></span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  rules <span class="ot">&lt;-</span> curve<span class="sc">$</span>rules; alpha0 <span class="ot">&lt;-</span> curve<span class="sc">$</span>alpha0; iterations <span class="ot">&lt;-</span> curve<span class="sc">$</span>n</span>
@@ -427,7 +437,7 @@ Given a step size and an angle increment, the turtle (represented by the state) 
 <p>The following figures were generated from plant rules included in “Algorithmic Beauty of Plants”:</p>
 <div class="cell">
 <details>
-<summary>Code</summary>
+<summary>Code: Plants from Algorithmic Beauty</summary>
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>curve <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="fu">list</span>(<span class="at">name =</span> <span class="st">"Plant A"</span>, </span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>                   <span class="at">axiom =</span> <span class="st">"F"</span>, </span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>                   <span class="at">rules =</span> <span class="fu">list</span>(<span class="st">"F"</span> <span class="ot">=</span> <span class="st">"F[+F]F[-F]F"</span>), </span>
@@ -493,6 +503,105 @@ Given a step size and an angle increment, the turtle (represented by the state) 
 </details>
 </div>
 <p><img src="Plants1.gif" class="img-fluid"></p>
+</section>
+<section id="stochastic-l-system" class="level3">
+<h3 class="anchored" data-anchor-id="stochastic-l-system">Stochastic L-System</h3>
+<p>A series of plants generated by the same axiom and rules of the L-systems examined so far will produce the exact same plant. In order to get variation, a specimen-by-specimen variation that preserves the general aspects must be introduced.<br>
+This variation can be achieved in two ways: randomizing the interpretation or the L-system. By varying the interpretation such as stem length or angle, the underlying structure of the plant will not be changed. On the other hand, changing the L-system can affect the structure itself. This can be achieved by creating multiple production rules for the same phrase and assigning them each a probability. For example, the axiom <span class="math inline">\(F\)</span> can be changed with the rules:</p>
+<p><span class="math display">\[
+\begin{aligned}
+p_1: F &amp;\xrightarrow{.33} F[+F]F[-F]F \\
+p_2: F &amp;\xrightarrow{.33} F[+F]F \\
+p_3: F &amp;\xrightarrow{.34} F[-F]F
+\end{aligned}
+\]</span></p>
+<div class="cell">
+<details>
+<summary>Code: Stochastic L-system</summary>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>stochastic_curve <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="fu">list</span>(<span class="at">name =</span> <span class="st">"stochastic_plant_a"</span>,</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>                              <span class="at">axiom =</span> <span class="st">"F"</span>, </span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>                              <span class="at">rules =</span> <span class="fu">list</span>(<span class="st">"F"</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="st">"F[+F]F[-F]F"</span>, </span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>                                           <span class="st">"F[+F]F"</span>, </span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>                                           <span class="st">"F[-F]F"</span>)), </span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>                              <span class="at">probs =</span> <span class="fu">c</span>(.<span class="dv">33</span>, .<span class="dv">33</span>, .<span class="dv">34</span>),</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>                              <span class="at">angle =</span> <span class="dv">20</span>, </span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>                              <span class="at">n =</span> <span class="dv">5</span>, </span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>                              <span class="at">alpha0 =</span> <span class="dv">90</span>))</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>draw_stochastic_l_curve <span class="ot">&lt;-</span> <span class="cf">function</span>(curve, <span class="at">c_bground =</span> <span class="st">"white"</span>, <span class="at">c_fractal =</span> <span class="st">"black"</span>) {</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>  rules <span class="ot">&lt;-</span> curve<span class="sc">$</span>rules; alpha0 <span class="ot">&lt;-</span> curve<span class="sc">$</span>alpha0; iterations <span class="ot">&lt;-</span> curve<span class="sc">$</span>n</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>  axiom <span class="ot">&lt;-</span> curve<span class="sc">$</span>axiom; probs <span class="ot">=</span> curve<span class="sc">$</span>probs</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>  <span class="co"># New l-system generator that includes probabilities by sampling the rules for F. </span></span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>iterations) {</span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>    axiom <span class="ot">&lt;-</span> <span class="fu">gsubfn</span>(<span class="st">"."</span>, </span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>                    <span class="at">replacement =</span> <span class="fu">list</span>(<span class="st">"F"</span> <span class="ot">=</span> <span class="fu">sample</span>(<span class="fu">unlist</span>(rules<span class="sc">$</span>F), <span class="dv">1</span>, </span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>                                                    <span class="at">prob =</span> probs)),</span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>                    axiom)</span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>  actions <span class="ot">&lt;-</span> <span class="fu">stri_extract_all</span>(axiom, <span class="at">regex =</span> <span class="st">"."</span>)[[<span class="dv">1</span>]]</span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>  actions <span class="ot">&lt;-</span> actions[actions <span class="sc">!=</span> <span class="st">"X"</span>]</span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a>  points <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> <span class="dv">0</span>, <span class="at">y =</span> <span class="dv">0</span>, <span class="at">alpha =</span> alpha0, <span class="at">time =</span> <span class="dv">0</span>)</span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a>  pop_points <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> <span class="fu">numeric</span>(), <span class="at">y =</span> <span class="fu">numeric</span>(), <span class="at">alpha =</span> <span class="fu">numeric</span>(), <span class="at">pop =</span> <span class="fu">numeric</span>())</span>
+<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a>  pop_lvl <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(actions)) {</span>
+<span id="cb9-30"><a href="#cb9-30" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (actions[i] <span class="sc">==</span> <span class="st">"F"</span> <span class="sc">|</span> actions[i] <span class="sc">==</span> <span class="st">"L"</span> <span class="sc">|</span> actions[i] <span class="sc">==</span> <span class="st">"R"</span>) {</span>
+<span id="cb9-31"><a href="#cb9-31" aria-hidden="true" tabindex="-1"></a>      x <span class="ot">&lt;-</span> points[<span class="fu">nrow</span>(points), <span class="st">"x"</span>] <span class="sc">+</span> <span class="fu">cos</span>(points[<span class="fu">nrow</span>(points), <span class="st">"alpha"</span>]<span class="sc">*</span>(pi<span class="sc">/</span><span class="dv">180</span>))</span>
+<span id="cb9-32"><a href="#cb9-32" aria-hidden="true" tabindex="-1"></a>      y <span class="ot">&lt;-</span> points[<span class="fu">nrow</span>(points), <span class="st">"y"</span>] <span class="sc">+</span> <span class="fu">sin</span>(points[<span class="fu">nrow</span>(points), <span class="st">"alpha"</span>]<span class="sc">*</span>(pi<span class="sc">/</span><span class="dv">180</span>))</span>
+<span id="cb9-33"><a href="#cb9-33" aria-hidden="true" tabindex="-1"></a>      alpha <span class="ot">&lt;-</span> points[<span class="fu">nrow</span>(points), <span class="st">"alpha"</span>]</span>
+<span id="cb9-34"><a href="#cb9-34" aria-hidden="true" tabindex="-1"></a>      points <span class="ot">&lt;-</span> <span class="fu">rbind</span>(points, <span class="fu">data.frame</span>(<span class="at">x=</span>x, <span class="at">y =</span> y, <span class="at">alpha =</span> alpha, <span class="at">time =</span> <span class="fu">nrow</span>(points)))</span>
+<span id="cb9-35"><a href="#cb9-35" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">else</span> <span class="cf">if</span> (actions[i] <span class="sc">==</span> <span class="st">"-"</span> <span class="sc">|</span> actions[i] <span class="sc">==</span> <span class="st">"+"</span>) {</span>
+<span id="cb9-36"><a href="#cb9-36" aria-hidden="true" tabindex="-1"></a>      alpha <span class="ot">&lt;-</span> points[<span class="fu">nrow</span>(points), <span class="st">"alpha"</span>] <span class="sc">+</span> <span class="fu">runif</span>(<span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">15</span>)</span>
+<span id="cb9-37"><a href="#cb9-37" aria-hidden="true" tabindex="-1"></a>      points[<span class="fu">nrow</span>(points), <span class="st">"alpha"</span>] <span class="ot">&lt;-</span> <span class="fu">eval</span>(<span class="fu">parse</span>(<span class="at">text =</span> <span class="fu">paste0</span>(alpha, actions[i], curve<span class="sc">$</span>angle)))</span>
+<span id="cb9-38"><a href="#cb9-38" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">else</span> <span class="cf">if</span> (actions[i] <span class="sc">==</span> <span class="st">"["</span>) {</span>
+<span id="cb9-39"><a href="#cb9-39" aria-hidden="true" tabindex="-1"></a>      pop_lvl <span class="ot">&lt;-</span> pop_lvl <span class="sc">+</span> <span class="dv">1</span></span>
+<span id="cb9-40"><a href="#cb9-40" aria-hidden="true" tabindex="-1"></a>      pop_points[pop_lvl,] <span class="ot">&lt;-</span> <span class="fu">c</span>(points[<span class="fu">nrow</span>(points),<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>], <span class="at">pop =</span> pop_lvl)</span>
+<span id="cb9-41"><a href="#cb9-41" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">else</span> {</span>
+<span id="cb9-42"><a href="#cb9-42" aria-hidden="true" tabindex="-1"></a>      tme <span class="ot">&lt;-</span> points[<span class="fu">nrow</span>(points), <span class="st">"time"</span>]</span>
+<span id="cb9-43"><a href="#cb9-43" aria-hidden="true" tabindex="-1"></a>      points <span class="ot">&lt;-</span> <span class="fu">rbind</span>(points, </span>
+<span id="cb9-44"><a href="#cb9-44" aria-hidden="true" tabindex="-1"></a>                      <span class="fu">c</span>(<span class="cn">NA</span>, <span class="cn">NA</span>, <span class="cn">NA</span>, tme <span class="sc">+</span> <span class="dv">1</span>), </span>
+<span id="cb9-45"><a href="#cb9-45" aria-hidden="true" tabindex="-1"></a>                      <span class="fu">c</span>(pop_points[pop_lvl, <span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>], <span class="at">time =</span> tme <span class="sc">+</span> <span class="dv">2</span>))</span>
+<span id="cb9-46"><a href="#cb9-46" aria-hidden="true" tabindex="-1"></a>      pop_lvl <span class="ot">&lt;-</span> pop_lvl <span class="sc">-</span> <span class="dv">1</span></span>
+<span id="cb9-47"><a href="#cb9-47" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb9-48"><a href="#cb9-48" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb9-49"><a href="#cb9-49" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb9-50"><a href="#cb9-50" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="at">data =</span> points, <span class="fu">aes</span>(x,y)) <span class="sc">+</span> </span>
+<span id="cb9-51"><a href="#cb9-51" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_path</span>(<span class="at">color =</span> c_fractal) <span class="sc">+</span> </span>
+<span id="cb9-52"><a href="#cb9-52" aria-hidden="true" tabindex="-1"></a>    <span class="fu">coord_fixed</span>() <span class="sc">+</span> </span>
+<span id="cb9-53"><a href="#cb9-53" aria-hidden="true" tabindex="-1"></a>    <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>, </span>
+<span id="cb9-54"><a href="#cb9-54" aria-hidden="true" tabindex="-1"></a>          <span class="at">panel.background =</span> <span class="fu">element_rect</span>(<span class="at">fill =</span> c_bground), </span>
+<span id="cb9-55"><a href="#cb9-55" aria-hidden="true" tabindex="-1"></a>          <span class="at">panel.grid =</span> <span class="fu">element_blank</span>(), </span>
+<span id="cb9-56"><a href="#cb9-56" aria-hidden="true" tabindex="-1"></a>          <span class="at">axis.ticks =</span> <span class="fu">element_blank</span>(), </span>
+<span id="cb9-57"><a href="#cb9-57" aria-hidden="true" tabindex="-1"></a>          <span class="at">axis.title =</span> <span class="fu">element_blank</span>(), </span>
+<span id="cb9-58"><a href="#cb9-58" aria-hidden="true" tabindex="-1"></a>          <span class="at">axis.text =</span> <span class="fu">element_blank</span>())</span>
+<span id="cb9-59"><a href="#cb9-59" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb9-60"><a href="#cb9-60" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-61"><a href="#cb9-61" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="sc">!</span><span class="fu">file.exists</span>(<span class="st">"Plants2.gif"</span>)) {</span>
+<span id="cb9-62"><a href="#cb9-62" aria-hidden="true" tabindex="-1"></a>p1 <span class="ot">&lt;-</span> <span class="fu">draw_stochastic_l_curve</span>(stochastic_curve[[<span class="dv">1</span>]])</span>
+<span id="cb9-63"><a href="#cb9-63" aria-hidden="true" tabindex="-1"></a>p2 <span class="ot">&lt;-</span> <span class="fu">draw_stochastic_l_curve</span>(stochastic_curve[[<span class="dv">1</span>]])</span>
+<span id="cb9-64"><a href="#cb9-64" aria-hidden="true" tabindex="-1"></a>p3 <span class="ot">&lt;-</span> <span class="fu">draw_stochastic_l_curve</span>(stochastic_curve[[<span class="dv">1</span>]])</span>
+<span id="cb9-65"><a href="#cb9-65" aria-hidden="true" tabindex="-1"></a>p4 <span class="ot">&lt;-</span> <span class="fu">draw_stochastic_l_curve</span>(stochastic_curve[[<span class="dv">1</span>]])</span>
+<span id="cb9-66"><a href="#cb9-66" aria-hidden="true" tabindex="-1"></a>p5 <span class="ot">&lt;-</span> <span class="fu">draw_stochastic_l_curve</span>(stochastic_curve[[<span class="dv">1</span>]])</span>
+<span id="cb9-67"><a href="#cb9-67" aria-hidden="true" tabindex="-1"></a>p6 <span class="ot">&lt;-</span> <span class="fu">draw_stochastic_l_curve</span>(stochastic_curve[[<span class="dv">1</span>]])</span>
+<span id="cb9-68"><a href="#cb9-68" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-69"><a href="#cb9-69" aria-hidden="true" tabindex="-1"></a>animation<span class="sc">::</span><span class="fu">saveGIF</span>(</span>
+<span id="cb9-70"><a href="#cb9-70" aria-hidden="true" tabindex="-1"></a>  <span class="at">expr =</span> {</span>
+<span id="cb9-71"><a href="#cb9-71" aria-hidden="true" tabindex="-1"></a>    <span class="fu">plot</span>(p1)</span>
+<span id="cb9-72"><a href="#cb9-72" aria-hidden="true" tabindex="-1"></a>    <span class="fu">plot</span>(p2)</span>
+<span id="cb9-73"><a href="#cb9-73" aria-hidden="true" tabindex="-1"></a>    <span class="fu">plot</span>(p3)</span>
+<span id="cb9-74"><a href="#cb9-74" aria-hidden="true" tabindex="-1"></a>    <span class="fu">plot</span>(p4)</span>
+<span id="cb9-75"><a href="#cb9-75" aria-hidden="true" tabindex="-1"></a>    <span class="fu">plot</span>(p5)</span>
+<span id="cb9-76"><a href="#cb9-76" aria-hidden="true" tabindex="-1"></a>    <span class="fu">plot</span>(p6)</span>
+<span id="cb9-77"><a href="#cb9-77" aria-hidden="true" tabindex="-1"></a>  },</span>
+<span id="cb9-78"><a href="#cb9-78" aria-hidden="true" tabindex="-1"></a>  <span class="at">movie.name =</span> <span class="st">"Plants2.gif"</span>, </span>
+<span id="cb9-79"><a href="#cb9-79" aria-hidden="true" tabindex="-1"></a>  <span class="at">interval =</span> .<span class="dv">5</span></span>
+<span id="cb9-80"><a href="#cb9-80" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb9-81"><a href="#cb9-81" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p><img src="Plants2.gif" class="img-fluid"></p>
 </section>
 </section>
 

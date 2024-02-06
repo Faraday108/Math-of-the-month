@@ -6,12 +6,14 @@ format:
 ---
 
 ## Lindenmayer Systems  
-In my investigation of fractals that I wrote up in IFS Fractals, I came across a way of generating fractals named Lindenmayer Systems, or L-systems for short. The fantastic book [Algorithmic Beauty of Plants](http://algorithmicbotany.org/papers/abop/abop.pdf) by Prusinkiewicz and Lindenmayer gives a thorough examination of this generation method. This generation was developed as a mathematical theory of plant development and a geometric interpetation of L-systems turned them into a tool of plant modeling.  
-The concept of L-systems is based on rewriting where parts of a simple initial object are replaced using a set of rewriting rules. A classic example of this is the Koch Snowflake where an intitial equilateral triangle has its sides replaced with a new bent line segment. This is repeated till the classic Snowflake appears.  
+In my investigation of fractals that I wrote up in IFS Fractals, I came across a way of generating fractals named Lindenmayer Systems, or L-systems for short. The fantastic book [Algorithmic Beauty of Plants](http://algorithmicbotany.org/papers/abop/abop.pdf) by Prusinkiewicz and Lindenmayer gives a thorough examination of this generation method. This generation was developed as a mathematical theory of plant development and a geometric interpretation of L-systems turned them into a tool of plant modeling.  
+The concept of L-systems is based on rewriting where parts of a simple initial object are replaced using a set of rewriting rules. A classic example of this is the Koch Snowflake where an initial equilateral triangle has its sides replaced with a new bent line segment. This is repeated till the classic Snowflake appears.  
 
 ### DOL-systems  
 These are the simplest L-systems; deterministic and context-free. The following example is from "Algorithmic Beauty of Plants":  
 "Consider strings (words) built of two letters *a* and *b*, which may occur many times in a string. Each letter is associated with a rewriting rule. The rule $a \rightarrow ab$ means that the letter *a* is to be replaced by the string *ab*, and the rule $b \rightarrow a$ means that the letter *b* is to be replaced by *a*. This rewriting process starts from a distinguished string called the axiom. Assume that it consists of a single letter *b*. In the first derivation step, the axiom *b* is replaced by *a* using $b \rightarrow a$. In the second step *a* is replaced by *ab*. THe word *ab* consists of two letters, both of which are *simultaneously* replaced in the next derivation step. Thus, *a* is replaced by *ab*, *b* is replaced by *a*, and the string *aba* results. In a similar way, the string *aba* yields *abaab* which in turn yields *abaababa*, then *abaababaabaab* and so on.  
+
+A point on the naming of this type of system. These are described as Deterministic Context-Free systems. In the context of a language class, a [context-free](https://en.wikipedia.org/wiki/Context-free_grammar) grammar (denoted OL-system in Algorithmic Beauty) is a transformation where a letter is replaced without regard to what other letters are surrounding it. On the other hand, a [context-sensitive](https://en.wikipedia.org/wiki/Context-sensitive_grammar) grammar (denoted IL-system in Algorithmic Beauty) looks at the surrounding structure. For example, the rule $xAy \rightarrow xBBy$ looks for the structure $A$ and will replace it with $BB$ if $A$ is in the context $xAy$.  
 
 ### Turtle interpretation of strings  
 The geometric interpretation of strings is simple: turtle graphics. The ideas is that the string can be turned into a set of instructions for a "turtle" where each character in the string carries meaning to change the state of the turtle. For two dimensional structures, the state of the turtle is given as $(x, y, \alpha)$ where *x* and *y* are the Cartesian coordinates and $\alpha$ is the turtles heading.  
@@ -34,6 +36,7 @@ To help in the efficient drawing of this curve, I created a helper function call
 
 
 ```{r}
+#| code-summary: "Code: L-system and Koch Snowflake"
 library(stringi)
 library(ggplot2)
 library(gsubfn)
@@ -131,7 +134,8 @@ In the following, two iterations of the "Sierpinski Triangle" are implemented. T
 This pattern is alternatively known as the "Sierpinski Arrowhead Curve". 
 
 ```{r}
-curve_sierpinski <- function(n) list(name = "Sierpinski Triangle", 
+#| code-summary: "Code: Generate Sierpinski Arrowhead"
+curve_sierpinski <- function(n) list(name = "Sierpinski Arrowhead", 
                    axiom = "R", 
                    rules = list("L" = "R+L+R", "R" = "L-R-L"), 
                    angle = 60, 
@@ -171,6 +175,7 @@ The classic implementation of the Sierpinski triangle is:
 A main difference between this curve and the prior is in the construction. This rule uses two different commands for "forward" that both look identical in construction but are two types of edges - a "left" edge L and a "right" edge R. 
 
 ```{r}
+#| code-summary: "Code: Generate Sierpinski Triangle"
 curve_sierpinski2 <- function(n) list(name = "Sierpinski Triangle", 
                    axiom = "L-R-R", 
                    rules = list("L" = "L-R+L+R-L", "R" = "RR"), 
@@ -210,10 +215,13 @@ animation::saveGIF(
 FASS is an acronym for space-**f**illing, self-**a**voiding, **s**imple and self-**s**imilar curves. An example is:  
 
 * Axiom: $L$
-* Transformation rules: $L \rightarrow L+R++R-L--LL-R+$ and $ R \rightarrow -L+RR++R+L--L-R$
+* Transformation rules: 
+  * $L \rightarrow L+R++R-L--LL-R+$
+  * $R \rightarrow -L+RR++R+L--L-R$
 * $\delta$ angle: $60^{\circ}$
 
 ```{r}
+#| code-summary: "Code: Generate FASS"
 curve_FASS <- function(n) list(name = "Hexagonal Gasper", 
                    axiom = "L", 
                    rules = list("L" = "L+R++R-L--LL-R+", "R" = "-L+RR++R+L--L-R"), 
@@ -249,14 +257,16 @@ So far, our turtle graphics have interpreted the string as a linear sequence of 
 ### Bracketed System  
 There are different possible representation of this structure, but one that is straightforward to implement in R is the bracketed OL-system. This introduces two new symbols to the turtle graphic implementation:  
 
-1. [ Push the current state of the turtle to a stack saving position and orientation
-2. ] Pop the state from the stack and make it the current state of the turtle. No line is drawn from prior state. 
+1. [ Push the current state of the turtle to a stack saving position and orientation   
+2. ] Pop the state from the stack and make it the current state of the turtle. No line is drawn from prior state.  
 
 This requires a rewriting of the `draw_l_system` function. This function does the same tasks as before but adds:  
-1. `pop_points` is a dataframe that saves the state of the turtle whenever a `[` is encountered
-2. The actions list includes extra `if else` statement that whenever a `[` is encountered the current state is saved and whenever a `]` is encountered this state is set to the current state with a single row of `NA` beforehand to prevent a line from being plotted. 
+
+1. `pop_points` is a dataframe that saves the state of the turtle whenever a `[` is encountered  
+2. The actions list includes extra `if else` statement that whenever a `[` is encountered the current state is saved and whenever a `]` is encountered this state is set to the current state with a single row of `NA` beforehand to prevent a line from being plotted.  
 
 ```{r}
+#| code-summary: "Code: Bracketed L-system"
 draw_l_curve2 <- function(curve, c_bground = "white", c_fractal = "black") {
   # Extract parameters of curve
   rules <- curve$rules; alpha0 <- curve$alpha0; iterations <- curve$n
@@ -313,6 +323,7 @@ draw_l_curve2 <- function(curve, c_bground = "white", c_fractal = "black") {
 The following figures were generated from plant rules included in "Algorithmic Beauty of Plants": 
 
 ```{r}
+#| code-summary: "Code: Plants from Algorithmic Beauty"
 curve <- list(list(name = "Plant A", 
                    axiom = "F", 
                    rules = list("F" = "F[+F]F[-F]F"), 
@@ -378,3 +389,102 @@ animation::saveGIF(
 ```
 
 ![](Plants1.gif)
+
+### Stochastic L-System  
+A series of plants generated by the same axiom and rules of the L-systems examined so far will produce the exact same plant. In order to get variation, a specimen-by-specimen variation that preserves the general aspects must be introduced.  
+This variation can be achieved in two ways: randomizing the interpretation or the L-system. By varying the interpretation such as stem length or angle, the underlying structure of the plant will not be changed. On the other hand, changing the L-system can affect the structure itself. This can be achieved by creating multiple production rules for the same phrase and assigning them each a probability. For example, the axiom $F$ can be changed with the rules:  
+
+$$
+\begin{aligned}
+p_1: F &\xrightarrow{.33} F[+F]F[-F]F \\
+p_2: F &\xrightarrow{.33} F[+F]F \\
+p_3: F &\xrightarrow{.34} F[-F]F
+\end{aligned}
+$$
+
+```{r stochastic}
+#| code-summary: "Code: Stochastic L-system"
+stochastic_curve <- list(list(name = "stochastic_plant_a",
+                              axiom = "F", 
+                              rules = list("F" = c("F[+F]F[-F]F", 
+                                           "F[+F]F", 
+                                           "F[-F]F")), 
+                              probs = c(.33, .33, .34),
+                              angle = 20, 
+                              n = 5, 
+                              alpha0 = 90))
+
+draw_stochastic_l_curve <- function(curve, c_bground = "white", c_fractal = "black") {
+  rules <- curve$rules; alpha0 <- curve$alpha0; iterations <- curve$n
+  axiom <- curve$axiom; probs = curve$probs
+  
+  # New l-system generator that includes probabilities by sampling the rules for F. 
+  for (i in 1:iterations) {
+    axiom <- gsubfn(".", 
+                    replacement = list("F" = sample(unlist(rules$F), 1, 
+                                                    prob = probs)),
+                    axiom)
+  }
+  
+  actions <- stri_extract_all(axiom, regex = ".")[[1]]
+  actions <- actions[actions != "X"]
+  points <- data.frame(x = 0, y = 0, alpha = alpha0, time = 0)
+  pop_points <- data.frame(x = numeric(), y = numeric(), alpha = numeric(), pop = numeric())
+  pop_lvl <- 0
+  
+  for (i in 1:length(actions)) {
+    if (actions[i] == "F" | actions[i] == "L" | actions[i] == "R") {
+      x <- points[nrow(points), "x"] + cos(points[nrow(points), "alpha"]*(pi/180))
+      y <- points[nrow(points), "y"] + sin(points[nrow(points), "alpha"]*(pi/180))
+      alpha <- points[nrow(points), "alpha"]
+      points <- rbind(points, data.frame(x=x, y = y, alpha = alpha, time = nrow(points)))
+    } else if (actions[i] == "-" | actions[i] == "+") {
+      alpha <- points[nrow(points), "alpha"] + runif(1, 0, 15)
+      points[nrow(points), "alpha"] <- eval(parse(text = paste0(alpha, actions[i], curve$angle)))
+    } else if (actions[i] == "[") {
+      pop_lvl <- pop_lvl + 1
+      pop_points[pop_lvl,] <- c(points[nrow(points),1:3], pop = pop_lvl)
+    } else {
+      tme <- points[nrow(points), "time"]
+      points <- rbind(points, 
+                      c(NA, NA, NA, tme + 1), 
+                      c(pop_points[pop_lvl, 1:3], time = tme + 2))
+      pop_lvl <- pop_lvl - 1
+    }
+  }
+  
+  ggplot(data = points, aes(x,y)) + 
+    geom_path(color = c_fractal) + 
+    coord_fixed() + 
+    theme(legend.position = "none", 
+          panel.background = element_rect(fill = c_bground), 
+          panel.grid = element_blank(), 
+          axis.ticks = element_blank(), 
+          axis.title = element_blank(), 
+          axis.text = element_blank())
+}
+
+if(!file.exists("Plants2.gif")) {
+p1 <- draw_stochastic_l_curve(stochastic_curve[[1]])
+p2 <- draw_stochastic_l_curve(stochastic_curve[[1]])
+p3 <- draw_stochastic_l_curve(stochastic_curve[[1]])
+p4 <- draw_stochastic_l_curve(stochastic_curve[[1]])
+p5 <- draw_stochastic_l_curve(stochastic_curve[[1]])
+p6 <- draw_stochastic_l_curve(stochastic_curve[[1]])
+
+animation::saveGIF(
+  expr = {
+    plot(p1)
+    plot(p2)
+    plot(p3)
+    plot(p4)
+    plot(p5)
+    plot(p6)
+  },
+  movie.name = "Plants2.gif", 
+  interval = .5
+)
+}
+```
+
+![](Plants2.gif)
