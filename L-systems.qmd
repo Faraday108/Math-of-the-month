@@ -488,3 +488,35 @@ animation::saveGIF(
 ```
 
 ![](Plants2.gif)
+## 3D L-System  
++ Turn left by angle $\delta$, using rotation matrix $R_U(\delta)$
+- Turn right by angle $\delta$, using rotation matrix $R_U(-\delta)$
+& Pitch down by angle $\delta$, using rotation matrix $R_L(\delta)$
+^ Pitch up by angle $\delta$, using rotation matrix $R_L(-\delta)$
+\ Roll left by angle $\delta$, using rotation matrix $R_H(\delta)$
+/ Roll right by angle $\delta$, using rotation matrix $R_H(\delta)$
+| Turn around, using rotation matrix $R_U(180^{\circ})$
+$ Rotate the turtle to vertical 
+
+
+A structure for a tree is as follows:  
+
+* n = 10
+* r1 = .9 - contracting ratio for trunk
+* r2 = .6 - contracting ratio for branches
+* a0 = 45 - branching angle from the trunk
+* a2 = 45 - branching angle for lateral axes
+* d = 137.5 - divergence angle
+* wr = .707 - width decrease rate
+* axiom: $\omega = A(1, 10)$
+* Production rules  
+  * A(l,w): * $\rightarrow$ !(w)F(l)[&(a0)B(l*r2, w*wr)]/(d)A(l*rw, w*wr)
+  * B(l,w): * $\rightarrow$ !(w)F(l)[-(a2)$C(l*r2, w*wr)]C(l*r1, w*wr)
+  * C(l,w): * $\rightarrow$ !(w)F(l)[+(a2)$B(l*r2, w*wr)]B(l*r1, w*wr)
+
+Note the symbol ! is used to set the diameter of segments. 
+
+```{r}
+
+```
+
