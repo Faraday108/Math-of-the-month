@@ -24,6 +24,28 @@ RH <- function(a) {
   a <- a*pi/180
   matrix(c(1, 0, 0, 0, cos(a), sin(a), 0, -sin(a), cos(a)), nrow = 3)
 }
+tropism <- c(0,-1,0)
+# Rotate heading toward tropism vector
+RT <- function(T0, tropism, e){
+  r <- cross(T0[,1], tropism) #rotation axis
+  a <- e*norm_vec(r) #alpha = rotation amount
+  r <- if(a != 0) {
+    r/norm_vec(r)
+  } else {
+    r
+  }
+  rot_mat <- matrix(c(r[1]^2*(1-cos(a))+cos(a), 
+               r[1]*r[2]*(1-cos(a))+r[3]*sin(a), 
+               r[1]*r[3]*(1-cos(a))-r[2]*sin(a), 
+               r[1]*r[2]*(1-cos(a))-r[3]*sin(a),
+               r[2]^2*(1-cos(a))+cos(a), 
+               r[2]*r[3]*(1-cos(a))+r[1]*sin(a), 
+               r[1]*r[3]*(1-cos(a))+r[2]*sin(a), 
+               r[2]*r[3]*(1-cos(a))-r[1]*sin(a), 
+               r[3]^2*(1-cos(a))+cos(a)),
+               nrow = 3)
+  rot_mat %*% T0
+}
 
 # Define initial state of turtle; H = straight up, L = along x-axis, U = along y-axis
 H0 <- c(0,0,1); L0 <- c(1,0,0); U0 <- c(0,1,0)
@@ -145,7 +167,7 @@ plot3d(M2, type = "n"); for (i in 1:11) lines3d(M2[i:(i+1),], lwd = M2[i,]$lwd)
 # create function to send list of directions to turtle. 
 # Turtle attributes need to include Position, Thickness, Heading, Left, and Up
 
-draw_3d_lsystem <- function(axiom, rules, iterations) {
+draw_3d_lsystem <- function(axiom, rules, iterations, tropism = c(0,0,-1), e = .14) {
   # Initial state: heading up, left on x, up on y
   H0 <- c(0,0,1); L0 <- c(1,0,0); U0 <- c(0,1,0)
   T0 <- matrix(c(H0, L0, U0), nrow = 3)
@@ -167,6 +189,8 @@ draw_3d_lsystem <- function(axiom, rules, iterations) {
       z <- turtle[nrow(turtle), "z"] + action$param * T0[3,1]
       
       turtle <- rbind(turtle, data.frame(x=x, y=y, z=z, lwd=lwd))
+      # ATTEMT AT TROPISM
+      T0 <- RT(T0, tropism, e)
       
     } else if (action$symbol == "!") {
       # set lwd to param
@@ -204,8 +228,17 @@ draw_3d_lsystem <- function(axiom, rules, iterations) {
 }
 
 if(!file.exists("first_tree.gif")){
+  # generate current tree
   test_tree2 <- draw_3d_lsystem(axiom2, rules2, 8); 
+  # Setup plot extents
   plot3d(test_tree2, type = "n")
+  # plot each line segment, lines3d seems unable to take lwd as something that varies
   for (i in 1:(nrow(test_tree2)-1)) lines3d(test_tree2[i:(i+1),], lwd = test_tree2[i,]$lwd)
+  # save movie
   movie3d(spin3d(), movie = "first_tree", duration = 12, webshot = FALSE, dir = ".")
 }
+
+test_tree3 <- draw_3d_lsystem(axiom2, rules2, 2)
+open3d()
+plot3d(test_tree3, type = "n")
+for (i in 1:(nrow(test_tree3)-1)) lines3d(test_tree3[i:(i+1),], lwd = test_tree3[i,]$lwd)
