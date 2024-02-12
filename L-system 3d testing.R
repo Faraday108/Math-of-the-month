@@ -1,51 +1,12 @@
+library(rgl); 
+source("vector_operations.R")
 ## Working on 3D rotation 
 
-cross <- function(x, y, i=1:3) {
-  create3D <- function(x) head(c(x, rep(0, 3)), 3)
-  x <- create3D(x)
-  y <- create3D(y)
-  j <- function(i) (i-1) %% 3+1
-  return (x[j(i+1)]*y[j(i+2)] - x[j(i+2)]*y[j(i+1)])
-}
-
-norm_vec <- function(x) sqrt(sum(x^2))
-
-cross(v1, m0_RU[,1]) / norm_vec(cross(v1, m0_RU[,1]))
-
-RU <- function(a) {
-  a <- a*pi/180
-  matrix(c(cos(a), -sin(a), 0, sin(a), cos(a), 0, 0, 0, 1), nrow = 3)
-}
-RL <- function(a) {
-  a <- a*pi/180
-  matrix(c(cos(a), 0, sin(a), 0, 1, 0, -sin(a), 0, cos(a)), nrow = 3)
-}
-RH <- function(a) {
-  a <- a*pi/180
-  matrix(c(1, 0, 0, 0, cos(a), sin(a), 0, -sin(a), cos(a)), nrow = 3)
-}
 tropism <- c(0,-1,0)
-# Rotate heading toward tropism vector
-RT <- function(T0, tropism, e){
-  r <- cross(T0[,1], tropism) #rotation axis
-  a <- e*norm_vec(r) #alpha = rotation amount
-  r <- if(a != 0) {
-    r/norm_vec(r)
-  } else {
-    r
-  }
-  rot_mat <- matrix(c(r[1]^2*(1-cos(a))+cos(a), 
-               r[1]*r[2]*(1-cos(a))+r[3]*sin(a), 
-               r[1]*r[3]*(1-cos(a))-r[2]*sin(a), 
-               r[1]*r[2]*(1-cos(a))-r[3]*sin(a),
-               r[2]^2*(1-cos(a))+cos(a), 
-               r[2]*r[3]*(1-cos(a))+r[1]*sin(a), 
-               r[1]*r[3]*(1-cos(a))+r[2]*sin(a), 
-               r[2]*r[3]*(1-cos(a))-r[1]*sin(a), 
-               r[3]^2*(1-cos(a))+cos(a)),
-               nrow = 3)
-  rot_mat %*% T0
-}
+
+# Testing rotation viewer
+draw_T0(T0%*%RH(30))
+draw_T0(RT(T0%*%RH(30), e=e), add = T)
 
 # Define initial state of turtle; H = straight up, L = along x-axis, U = along y-axis
 H0 <- c(0,0,1); L0 <- c(1,0,0); U0 <- c(0,1,0)
@@ -55,6 +16,7 @@ T0 <- matrix(c(H0, L0, U0), nrow = 3)
 T0 %*% RU(pi/3)
 
 # Define a function to apply production rules
+# Old apply, doesn't include parameter
 apply_rules <- function(symbol, rules) {
   if (symbol$symbol %in% names(rules)) {
     return(rules[[symbol$symbol]])
@@ -79,7 +41,7 @@ apply_rules2 <- function(symbol, rules) {
   }
 }
 
-# Define function to generate L-system
+# Define function to generate L-system using apply_rules
 generate_l_system <- function(axiom, rules, iterations) {
   sequence <- axiom
   for (i in 1:iterations) {
@@ -93,6 +55,7 @@ generate_l_system <- function(axiom, rules, iterations) {
   return(sequence)
 }
 
+# Testing axiom and parameter
 axiom <- list(
   list(symbol = "A", param = 1),
   list(symbol = "B", param = 2)
@@ -108,15 +71,17 @@ rules <- list(
     list(symbol = "B", param = .125)
   )
 )
+
+# Tree axiom for figure 2.8 from ABOP
 axiom2 <- list(
   list(symbol = "!", param = 1), 
   list(symbol = "F", param = 200), 
   list(symbol = "/", param = 45), 
   list(symbol = "A")
 )
-d1 <- 94.74; d2 <- 132.63; a <- 18.95; lr <- 1.109; vr <- 1.732
-d1 <- 137.5; d2 <- 137.5; a <- 18.95; lr <- 1.109; vr <- 1.732
-rules2 <- list(
+
+# Rules, initial state 2.8a parameters
+rules2 <- function(d1 = 94.74, d2 = 132.63, a = 18.95, lr = 1.109, vr = 1.732) {list(
   A = list(
     list(symbol = "!", param = vr), 
     list(symbol = "F", param = 50), 
@@ -144,41 +109,31 @@ rules2 <- list(
   "!" = list(
     list(symbol = "!", param = vr)
   )
-)
+)}
 
-iterations <- 1
 
-#parametric_l <- generate_l_system(axiom, rules, iterations = 3)
+# ## TESTING GRAPHING OF FUNCTION
+# # To have differing line widths, need to run through multiple lines3d
+# M <- matrix(sample(1:36, 36, FALSE), 3, 12, dimnames = list(c('x', 'y', 'z'),rep(LETTERS[1:4], 3)))
+# plot3d(t(M), size = 0, type = "l")
+# for (i in 1:11) {lines3d(t(M[,i:(i+1)]), lwd = i)}
 
-# Create testing of functions, works well currently!
-test_tree <- generate_l_system(axiom2, rules2, iterations = 2)
+# ## TESTING STORING AS DF WITH LWD COLUMN
+# M2 <- data.frame(t(M), lwd = 1:12)
+# plot3d(M2, type = "n"); for (i in 1:11) lines3d(M2[i:(i+1),], lwd = M2[i,]$lwd)
 
-## TESTING GRAPHING OF FUNCTION
-# To have differing line widths, need to run through multiple lines3d
-M <- matrix(sample(1:36, 36, FALSE), 3, 12, dimnames = list(c('x', 'y', 'z'),rep(LETTERS[1:4], 3)))
-plot3d(t(M), size = 0, type = "l")
-for (i in 1:11) {lines3d(t(M[,i:(i+1)]), lwd = i)}
-
-## TESTING STORING AS DF WITH LWD COLUMN
-M2 <- data.frame(t(M), lwd = 1:12)
-plot3d(M2, type = "n"); for (i in 1:11) lines3d(M2[i:(i+1),], lwd = M2[i,]$lwd)
-
-### TO DO 
-# create function to send list of directions to turtle. 
-# Turtle attributes need to include Position, Thickness, Heading, Left, and Up
-
+# Calls generate_l_system, converts list of parameters to points
 draw_3d_lsystem <- function(axiom, rules, iterations, tropism = c(0,0,-1), e = .14) {
   # Initial state: heading up, left on x, up on y
   H0 <- c(0,0,1); L0 <- c(1,0,0); U0 <- c(0,1,0)
   T0 <- matrix(c(H0, L0, U0), nrow = 3)
   x0 <- 0; y0 <- 0; z0 <- 0
   lwd <- 0
-  turtle <- list(pos = P0, dir = T0, lwd = lwd)
-  turtle <- data.frame(x = x0, y = y0, z = z0, lwd = lwd)
+  turtle <- data.frame(x = x0, y = y0, z = z0, lwd = lwd, seg = 0)
   
   tree <- generate_l_system(axiom, rules, iterations)
   branch_pop <- list()
-  # branch_pop <- list(list(state = numeric(), T = numeric()))
+
   pop_lvl <- 0
   for (action in tree) {
     if(action$symbol == "F") {
@@ -188,8 +143,9 @@ draw_3d_lsystem <- function(axiom, rules, iterations, tropism = c(0,0,-1), e = .
       y <- turtle[nrow(turtle), "y"] + action$param * T0[2,1]
       z <- turtle[nrow(turtle), "z"] + action$param * T0[3,1]
       
-      turtle <- rbind(turtle, data.frame(x=x, y=y, z=z, lwd=lwd))
-      # ATTEMT AT TROPISM
+      seg <- turtle[nrow(turtle),"seg"]
+      turtle <- rbind(turtle, data.frame(x=x, y=y, z=z, lwd=lwd, seg = seg+1))
+      # TROPISM - results not entirely consistent with book
       T0 <- RT(T0, tropism, e)
       
     } else if (action$symbol == "!") {
@@ -219,12 +175,35 @@ draw_3d_lsystem <- function(axiom, rules, iterations, tropism = c(0,0,-1), e = .
                       #c(NA, NA, NA, NA), 
                       branch_pop[[pop_lvl]]$pos)
       T0 <- branch_pop[[pop_lvl]]$T
+      
       # Remove last of stack. 
       branch_pop <- branch_pop[-length(branch_pop)]
       pop_lvl <- pop_lvl - 1
     }
   }
   turtle
+}
+
+if(!file.exists("tree_figa.gif")) {
+  tropism <- c(0, -1, 0); e = .22; n = 6
+  rulesa <- rules2()
+  treea <- draw_3d_lsystem(axiom2, rulesa, n, tropism, e)
+  
+  # colors
+  yb<-colorRampPalette(c("#1B0000","#4d2B0b","chocolate4"))
+  # Find max number of tree segments, make last green 
+  cols <- c(yb(max(treea$seg)-1),"green4")
+  # plot
+  open3d()
+  plot3d(treea, type = "n")
+  for (i in 1:(nrow(treea)-1)) {
+    if(treea[i,"seg"] < treea[i+1,"seg"]) {
+      lines3d(treea[i:(i+1),], lwd = treea[i,]$lwd/1.73, 
+              col = cols[treea[i,"seg"]+1])
+    }
+  }
+  # Export movie
+  movie3d(spin3d(), movie = "tree_figa", duration = 12, webshot = FALSE, dir = ".")
 }
 
 if(!file.exists("first_tree.gif")){
@@ -238,7 +217,68 @@ if(!file.exists("first_tree.gif")){
   movie3d(spin3d(), movie = "first_tree", duration = 12, webshot = FALSE, dir = ".")
 }
 
-test_tree3 <- draw_3d_lsystem(axiom2, rules2, 2)
-open3d()
-plot3d(test_tree3, type = "n")
-for (i in 1:(nrow(test_tree3)-1)) lines3d(test_tree3[i:(i+1),], lwd = test_tree3[i,]$lwd)
+
+if(!file.exists("second_tree.gif")) {
+  d1 <- 137.5; d2 <- 137.5; a <- 18.95; lr <- 1.109; vr <- 1.732
+  tropism <- c(0, -1, 0); e = .14; n = 8
+  rulesb <- rules2(d1, d2, a, lr, vr)
+  treeb <- draw_3d_lsystem(axiom2, rulesb, n, tropism, e)
+  
+  # colors
+  yb<-colorRampPalette(c("#1B0000","#4d2B0b","chocolate4"))
+  # Find max number of tree segments, make last green 
+  cols <- c(yb(max(treeb$seg)-1),"green4")
+  # plot
+  open3d()
+  plot3d(treeb, type = "n")
+  for (i in 1:(nrow(treeb)-1)) {
+    if(treeb[i,"seg"] < treeb[i+1,"seg"]) {
+      lines3d(treeb[i:(i+1),], lwd = treeb[i,]$lwd/1.73, 
+              col = cols[treeb[i,"seg"]+1])
+    }
+  }
+  # Export movie
+  movie3d(spin3d(), movie = "second_tree", duration = 12, webshot = FALSE, dir = ".")
+}
+
+if(!file.exists("tree_figc.gif")) {
+  d1 <- 112.5; d2 <- 157.5; a <- 22.5; lr <- 1.790; vr <- 1.732
+  
+  test_tree3 <- draw_3d_lsystem(axiom2, rules2, 8, tropism = c(-.02, 0, -1), e=.27)
+  # colors
+  yb<-colorRampPalette(c("#1B0000","#4d2B0b","chocolate4"))
+  # Find max number of tree segments, make last green 
+  cols <- c(yb(max(test_tree3$seg)-1),"green4")
+  # plot
+  open3d()
+  plot3d(test_tree3, type = "n")
+  for (i in 1:(nrow(test_tree3)-1)) {
+    if(test_tree3[i,"seg"] < test_tree3[i+1,"seg"]) {
+      lines3d(test_tree3[i:(i+1),], lwd = test_tree3[i,]$lwd/1.73, 
+              col = cols[test_tree3[i,"seg"]+1])
+    }
+  }
+  # Export movie
+  movie3d(spin3d(), movie = "tree_figc", duration = 12, webshot = FALSE, dir = ".")
+}
+
+if(!file.exists("tree_figd.gif")) {
+  d1 <- 180; d2 <- 252; a <- 36; lr <- 1.07; vr <- 1.732
+  test_tree4 <- draw_3d_lsystem(axiom2, rules2, 6, tropism = c(-.61, .77, -.19), e=.4)
+  # colors
+  yb<-colorRampPalette(c("#1B0000","#4d2B0b","chocolate4"))
+  # Find max number of tree segments, make last green 
+  cols <- c(yb(max(test_tree4$seg)-1),"green4")
+  # plot
+  open3d()
+  plot3d(test_tree4, type = "n")
+  for (i in 1:(nrow(test_tree4)-1)) {
+    if(test_tree4[i,"seg"] < test_tree4[i+1,"seg"]) {
+      lines3d(test_tree4[i:(i+1),], lwd = test_tree4[i,]$lwd/1.73, 
+              col = cols[test_tree4[i,"seg"]+1])
+    }
+  }
+  # Export movie
+  movie3d(spin3d(), movie = "tree_figd", duration = 12, webshot = FALSE, dir = ".")
+}
+
