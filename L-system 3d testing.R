@@ -185,7 +185,7 @@ draw_3d_lsystem <- function(axiom, rules, iterations, tropism = c(0,0,-1), e = .
 }
 
 if(!file.exists("tree_figa.gif")) {
-  tropism <- c(0, -1, 0); e = .22; n = 6
+  tropism <- c(0,0, -1); e = .22; n = 5
   rulesa <- rules2()
   treea <- draw_3d_lsystem(axiom2, rulesa, n, tropism, e)
   
@@ -198,7 +198,7 @@ if(!file.exists("tree_figa.gif")) {
   plot3d(treea, type = "n")
   for (i in 1:(nrow(treea)-1)) {
     if(treea[i,"seg"] < treea[i+1,"seg"]) {
-      lines3d(treea[i:(i+1),], lwd = treea[i,]$lwd/1.73, 
+      lines3d(treea[i:(i+1),], lwd = treea[i+1,]$lwd/1.73, 
               col = cols[treea[i,"seg"]+1])
     }
   }
