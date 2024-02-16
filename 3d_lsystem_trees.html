@@ -336,7 +336,7 @@ The orientation of the turtle is adjusted by <span class="math inline">\(\alpha\
 <section id="axiom-and-production-rules" class="level3">
 <h3 class="anchored" data-anchor-id="axiom-and-production-rules">Axiom and production rules</h3>
 <p>To convert the above axiom and production rules into something R can interpret, I chose to store them as a list. The advantage the list has over a string is that it simplifies the use of parameters as a list can store for each letter one or more parameters that can be easily extracted, manipulated, and stored.<br>
-So that different parameters can be passed to the production rules, I chose to make it a function that accepts the parameters that can be changed.</p>
+So that different parameters can be passed to the production rules, I chose to make it a function that accepts the parameters that can be changed. What each of these symbols and parameters signifies will be expanded in the “Convert L-Systems to Points” section below.</p>
 <div class="cell" data-hash="3d_lsystem_trees_cache/html/axiom and rules_4eb4b4822f2af1424670b5db590401a6">
 <details>
 <summary>Axiom and Rules</summary>
@@ -448,6 +448,8 @@ The <code>draw_3d_lsystem</code> function takes the same arguments as <code>gene
 <li>If <code>A</code>: do nothing, left over generation function</li>
 </ul></li>
 </ol>
+<p>These actions also take several parameters that are taken from the <code>rules</code> and are:<br>
+1. <span class="math inline">\(d_1\)</span>: divergence angle 1 2. <span class="math inline">\(d_2\)</span>: divergence angle 2 3. <span class="math inline">\(a\)</span>: branching angle 4. <span class="math inline">\(l_r\)</span>: elongation rate 5. <span class="math inline">\(v_r\)</span>: width increase rate</p>
 <div class="cell" data-hash="3d_lsystem_trees_cache/html/l-system to points_55efdc9c5fa42acf0f1bd478933bf04a">
 <details>
 <summary>L-system to Points</summary>
@@ -559,6 +561,18 @@ The <code>draw_3d_lsystem</code> function takes the same arguments as <code>gene
 <section id="results" class="level2">
 <h2 class="anchored" data-anchor-id="results">Results</h2>
 <p>Trying to include the tree as an interactive plot similar to the vector visualizations above caused the website to slow to the point of unusability. As an alternative, using <code>rgl::movie3d</code> a gif was created to highlight the resulting tree structure.</p>
+<section id="figure-2.8a" class="level3">
+<h3 class="anchored" data-anchor-id="figure-2.8a">Figure 2.8a</h3>
+<p>The default parameters I created for the <code>rules()</code> function recreate Figure 2.8a from ABOP and are:</p>
+<p><span class="math display">\[
+d_1: 94.74^{\circ} \\
+d_2: 132.63^{\circ} \\
+a: 18.95^{\circ} \\
+l_r: 1.109 \\
+\vec{T} = (0,0,-1) \\
+e = .22 \\
+n = 6 \\
+\]</span></p>
 <div class="cell" data-hash="3d_lsystem_trees_cache/html/Treea_9e9964ce94d07fd6d21d93c541155049">
 <details>
 <summary>Code</summary>
@@ -572,6 +586,100 @@ The <code>draw_3d_lsystem</code> function takes the same arguments as <code>gene
 <figcaption class="figure-caption">Treea</figcaption>
 </figure>
 </div>
+</section>
+<section id="figure-2.8b" class="level3">
+<h3 class="anchored" data-anchor-id="figure-2.8b">Figure 2.8b</h3>
+<p>To recreate 2.8b, the following parameters are passed to <code>rules</code> and <code>points_3d_lsystem</code>:</p>
+<p><span class="math display">\[
+d_1: 137.5^{\circ},
+d_2: 137.5^{\circ},
+a: 18.95^{\circ},
+l_r: 1.109,
+\vec{T} = (0,0,-1),
+e = .14,
+n = 8
+\]</span></p>
+<div class="cell" data-hash="3d_lsystem_trees_cache/html/Treeb_13f73a1acca65d6c1a863eee8ed13801">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>rulesb <span class="ot">&lt;-</span> <span class="fu">rules</span>(<span class="fl">137.5</span>, <span class="fl">137.5</span>,<span class="fl">18.95</span>,<span class="fl">1.109</span>,<span class="fl">1.732</span>)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>treeb <span class="ot">&lt;-</span> <span class="fu">points_3d_lsystem</span>(axiom, rulesb, <span class="at">iterations =</span> <span class="dv">8</span>, <span class="at">e =</span> .<span class="dv">14</span>)</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="fu">draw_3d_lsystem</span>(treeb)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="tree_figb_loop.gif" class="img-fluid figure-img"></p>
+<figcaption class="figure-caption">Treeb</figcaption>
+</figure>
+</div>
+</section>
+<section id="figure-2.8c" class="level3">
+<h3 class="anchored" data-anchor-id="figure-2.8c">Figure 2.8c</h3>
+<p>To recreate 2.8c, the following parameters are passed to <code>rules</code> and <code>points_3d_lsystem</code>:</p>
+<p><span class="math display">\[
+d_1: 112.5^{\circ},
+d_2: 157.5^{\circ},
+a: 22.5^{\circ},
+l_r: 1.790,
+\vec{T} = (-.02,0,-1),
+e = .27,
+n = 8
+\]</span></p>
+<div class="cell" data-hash="3d_lsystem_trees_cache/html/Treec_832c750d01885b081069da9a3251e78f">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>rulesc <span class="ot">&lt;-</span> <span class="fu">rules</span>(<span class="fl">112.5</span>, <span class="fl">157.5</span>,<span class="fl">22.5</span>,<span class="fl">1.790</span>,<span class="fl">1.732</span>)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>treec <span class="ot">&lt;-</span> <span class="fu">points_3d_lsystem</span>(axiom, rulesc, <span class="at">iterations =</span> <span class="dv">8</span>, <span class="at">tropism =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">0.02</span>, <span class="dv">0</span>, <span class="sc">-</span><span class="dv">1</span>), <span class="at">e =</span> .<span class="dv">14</span>)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="fu">draw_3d_lsystem</span>(treec)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="tree_figc_loop.gif" class="img-fluid figure-img"></p>
+<figcaption class="figure-caption">Treec</figcaption>
+</figure>
+</div>
+</section>
+<section id="additions" class="level3">
+<h3 class="anchored" data-anchor-id="additions">Additions</h3>
+<p>The building block of a tree created here can be expanded to include many other features. For example, by including the <code>seg</code> segment number parameter color was added to the structure by tracking which generation a particular segment was added in.<br>
+Another feature that can be added with a small function is generating a leaf at the end of each branch. The <code>make_leaf</code> function below takes in the last two segments of a branch and:</p>
+<ol type="1">
+<li>Extracts the segment end points as vectors <span class="math inline">\(p_1,p_2\)</span><br>
+</li>
+<li>Finds the orientation vector <span class="math inline">\(v_1 = p_2 - p_1\)</span><br>
+</li>
+<li>Rotates the orientation around the “Up” vector by a default of <span class="math inline">\(15^{\circ}\)</span> in both positive and negative directions, adding the result to <span class="math inline">\(p_1\)</span> to get two new points <span class="math inline">\(p_l, p_r\)</span></li>
+<li>Forms a triangle with <code>polygon3d</code> from points <span class="math inline">\(p_1, p_l, p_r\)</span></li>
+</ol>
+<div class="cell" data-hash="3d_lsystem_trees_cache/html/add leaves_6224f238b5c5c71f56dd95dedb240a18">
+<details>
+<summary>Add_leaf function</summary>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>make_leaf <span class="ot">&lt;-</span> <span class="cf">function</span>(pts, <span class="at">deg =</span> <span class="dv">15</span>) {</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="co"># pts should be passed in as tree[(i-1):i]</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  p1 <span class="ot">&lt;-</span> <span class="fu">as.vector</span>(pts[<span class="dv">1</span>,], <span class="at">mode =</span> <span class="st">"numeric"</span>)</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  p2 <span class="ot">&lt;-</span> <span class="fu">as.vector</span>(pts[<span class="dv">2</span>,], <span class="at">mode =</span> <span class="st">"numeric"</span>)</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  v1 <span class="ot">&lt;-</span> p2 <span class="sc">-</span> p1</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>  pl <span class="ot">&lt;-</span> p1 <span class="sc">+</span> v1 <span class="sc">%*%</span> <span class="fu">RU</span>(deg)</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>  pr <span class="ot">&lt;-</span> p1 <span class="sc">+</span> v1 <span class="sc">%*%</span> <span class="fu">RU</span>(<span class="sc">-</span>deg)</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">polygon3d</span>(<span class="fu">rbind</span>(p1,pl,pr),<span class="at">col =</span> <span class="st">"green4"</span>)</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>This new function can then be added to the <code>draw_3d_lsystem</code> function as an extra condition in the <code>for</code> loop: if at the end of a branch, draw a leaf.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="tree_figb_leaf_loop.gif" class="img-fluid figure-img"></p>
+<figcaption class="figure-caption">Treeb with leaves</figcaption>
+</figure>
+</div>
+</section>
+</section>
+<section id="conclusion" class="level2">
+<h2 class="anchored" data-anchor-id="conclusion">Conclusion</h2>
+<p>Implementing a 3D L-system in R used several functions to handle vectors, store rules, apply rules, create the L-system, and plot the result. From Algorithmic Beauty of Plants, figures 2.8a - 2.8c were recreated with color and the addition of a leaf feature were explored.<br>
+Further work on more detailed leaves, defining a branch polygon feature, adding variability in the structure via a stochastic 3d l-system, and more can be envisoned and may be explored at a future time. Ultimately, coding this in R was a great amount of fun combined with learning about 3d systems and storing information in lists.</p>
 </section>
 
 </main>
