@@ -18,3 +18,5 @@ Within this repository, I'll be publishing various implementations of mathematic
 <a href = "Roots_of_unity_writeup.html">Roots of Unity Writeup</a>
 <br> 
 <a href = "L-systems.html">L-Systems</a>
+<br>
+<a href = "3d_lsystem_trees.html">3D L-System Trees</a>
