@@ -31,15 +31,33 @@ draw_T0 <- function(T0, add = F, tropism = NULL, lwd = 1) {
   plot3d(c(0,0,0), 
          xlab = "x", ylab = "y", zlab = "z",
          xlim = c(-1,1), ylim = c(-1,1), zlim = c(-1,1), add = add)
-  col = c("red", "green", "blue")
+  col <-  c("red", "green", "blue")
+  text <- c("H", "L", "U")
+  text2 <- c("H'", "L'", "U'")
   for (i in 1:3) {
     lines3d(c(c(0,0,0),T0[,i]), col = col[i], lwd = lwd)
+    text3d(T0[,i]+c(.05,.05,0), texts = ifelse(add, text2[i], text[i]))
   }
   if (!is.null(tropism)) {
-    lines3d(c(c(0,0,0), tropism))
+    lines3d(c(c(0,0,0), tropism/norm_vec(tropism)))
   }
 }
 
+Ra <- function(T0, r, a) {
+  a <- a*pi/180
+  # rotation matrix - arbitrary axis
+  rot_mat <- matrix(c(r[1]^2*(1-cos(a))+cos(a), 
+                      r[1]*r[2]*(1-cos(a))+r[3]*sin(a), 
+                      r[1]*r[3]*(1-cos(a))-r[2]*sin(a), 
+                      r[1]*r[2]*(1-cos(a))-r[3]*sin(a),
+                      r[2]^2*(1-cos(a))+cos(a), 
+                      r[2]*r[3]*(1-cos(a))+r[1]*sin(a), 
+                      r[1]*r[3]*(1-cos(a))+r[2]*sin(a), 
+                      r[2]*r[3]*(1-cos(a))-r[1]*sin(a), 
+                      r[3]^2*(1-cos(a))+cos(a)),
+                    nrow = 3)
+  rot_mat %*% T0
+}
 
 # Rotate heading toward tropism vector
 RT <- function(T0, tropism = c(0,-1,0), e){

@@ -2,6 +2,9 @@ library(rgl);
 source("vector_operations.R")
 ## Working on 3D rotation 
 
+#########POTENTIAL ERROR###############
+# HxL = U #, nvm
+
 tropism <- c(0,-1,0)
 
 # Testing rotation viewer
@@ -123,7 +126,7 @@ rules2 <- function(d1 = 94.74, d2 = 132.63, a = 18.95, lr = 1.109, vr = 1.732) {
 # plot3d(M2, type = "n"); for (i in 1:11) lines3d(M2[i:(i+1),], lwd = M2[i,]$lwd)
 
 # Calls generate_l_system, converts list of parameters to points
-draw_3d_lsystem <- function(axiom, rules, iterations, tropism = c(0,0,-1), e = .14) {
+points_3d_lsystem <- function(axiom, rules, iterations, tropism = c(0,0,-1), e = .14) {
   # Initial state: heading up, left on x, up on y
   H0 <- c(0,0,1); L0 <- c(1,0,0); U0 <- c(0,1,0)
   T0 <- matrix(c(H0, L0, U0), nrow = 3)
@@ -145,7 +148,7 @@ draw_3d_lsystem <- function(axiom, rules, iterations, tropism = c(0,0,-1), e = .
       
       seg <- turtle[nrow(turtle),"seg"]
       turtle <- rbind(turtle, data.frame(x=x, y=y, z=z, lwd=lwd, seg = seg+1))
-      # TROPISM - results not entirely consistent with book
+      # TROPISM - results not entirely consistent with book, mainly on plot d
       T0 <- RT(T0, tropism, e)
       
     } else if (action$symbol == "!") {
@@ -184,10 +187,72 @@ draw_3d_lsystem <- function(axiom, rules, iterations, tropism = c(0,0,-1), e = .
   turtle
 }
 
+# CREATE FUNCTION TO HANDLE THE GRAPH
+draw_3d_lsystem <- function(tree) {
+  # colors
+  yb<-colorRampPalette(c("#1B0000","#4d2B0b","chocolate4"))
+  # Find max number of tree segments, make last green 
+  cols <- c(yb(max(tree$seg)-1),"green4")
+  # plot
+  open3d(silent = TRUE)
+  par3d(windowRect = c(0,100,500,600))
+  view3d(theta = 0, phi = -75, zoom = .6)
+  plot3d(tree, type = "n")
+  mseg <- max(tree$seg)
+  for (i in 1:(nrow(tree)-1)) {
+    if(tree[i,"seg"] < tree[i+1,"seg"]) {
+      lines3d(tree[i:(i+1),], lwd = tree[i+1,]$lwd/1.73, 
+              col = cols[tree[i,"seg"]+1])
+    }
+  }
+}
+
+# CREATE FUNCTION TO HANDLE THE GRAPH - BONUS LEAVES
+draw_3d_lsystem2 <- function(tree) {
+  # colors
+  yb<-colorRampPalette(c("#1B0000","#4d2B0b","chocolate4"))
+  # Find max number of tree segments, make last green 
+  # cols <- c(yb(max(tree$seg)-1),"green4")
+  cols <- c(yb(max(tree$seg)-1))
+  # plot
+  open3d(silent = TRUE)
+  par3d(windowRect = c(0,100,500,600))
+  view3d(theta = 0, phi = -75, zoom = .6)
+  plot3d(tree, type = "n")
+  mseg <- max(tree$seg)
+  for (i in 1:(nrow(tree)-1)) {
+    if((tree[i,"seg"] < tree[i+1,"seg"]) & (tree[i+1,"seg"] < mseg)) {
+      lines3d(tree[i:(i+1),], lwd = tree[i+1,]$lwd/1.73, 
+              col = cols[tree[i,"seg"]+1])
+    }
+    # It would be neat to add ability to draw "leaves"
+    # Can rotate left and right around "U" vector 
+    # Draw leaf with polygon3d
+    if(tree[i, "seg"] == mseg) {
+      make_leaf(tree[(i-1):i,1:3]) # only pass xyz
+    }
+  }
+}
+
+make_leaf <- function(pts) {
+  deg <- 15
+  # pts should be passed in as tree[(i-1):i]
+  p1 <- as.vector(pts[1,], mode = "numeric")
+  p2 <- as.vector(pts[2,], mode = "numeric")
+  v1 <- p2 - p1
+  pl <- p1 + v1 %*% RU(deg)
+  pr <- p1 + v1 %*% RU(-deg)
+  polygon3d(rbind(p1,pl,pr),col = "green4")
+}
+
+draw_3d_lsystem(treea)
+
+window_rect <- c(267.0, 44.0, 609.0, 365.5)
+
 if(!file.exists("tree_figa.gif")) {
-  tropism <- c(0,0, -1); e = .22; n = 5
+  tropism <- c(0,0, -1); e = .22; n = 6
   rulesa <- rules2()
-  treea <- draw_3d_lsystem(axiom2, rulesa, n, tropism, e)
+  treea <- points_3d_lsystem(axiom2, rulesa, n, tropism, e)
   
   # colors
   yb<-colorRampPalette(c("#1B0000","#4d2B0b","chocolate4"))
@@ -202,13 +267,15 @@ if(!file.exists("tree_figa.gif")) {
               col = cols[treea[i,"seg"]+1])
     }
   }
+  par3d(windowRect = c(0,100,500,600))
+  view3d(theta = 0, phi = -75, zoom = .6)
   # Export movie
-  movie3d(spin3d(), movie = "tree_figa", duration = 12, webshot = FALSE, dir = ".")
+  movie3d(spin3d(), movie = "tree_figa", duration = 12, fps = 20, webshot = FALSE, dir = ".")
 }
 
 if(!file.exists("first_tree.gif")){
   # generate current tree
-  test_tree2 <- draw_3d_lsystem(axiom2, rules2, 8); 
+  test_tree2 <- points_3d_lsystem(axiom2, rules2, 8); 
   # Setup plot extents
   plot3d(test_tree2, type = "n")
   # plot each line segment, lines3d seems unable to take lwd as something that varies
@@ -218,11 +285,11 @@ if(!file.exists("first_tree.gif")){
 }
 
 
-if(!file.exists("second_tree.gif")) {
+if(!file.exists("tree_figb.gif")) {
   d1 <- 137.5; d2 <- 137.5; a <- 18.95; lr <- 1.109; vr <- 1.732
-  tropism <- c(0, -1, 0); e = .14; n = 8
+  tropism <- c(0, 0, -1); e = .14; n = 8
   rulesb <- rules2(d1, d2, a, lr, vr)
-  treeb <- draw_3d_lsystem(axiom2, rulesb, n, tropism, e)
+  treeb <- points_3d_lsystem(axiom2, rulesb, n, tropism, e)
   
   # colors
   yb<-colorRampPalette(c("#1B0000","#4d2B0b","chocolate4"))
@@ -233,52 +300,63 @@ if(!file.exists("second_tree.gif")) {
   plot3d(treeb, type = "n")
   for (i in 1:(nrow(treeb)-1)) {
     if(treeb[i,"seg"] < treeb[i+1,"seg"]) {
-      lines3d(treeb[i:(i+1),], lwd = treeb[i,]$lwd/1.73, 
+      lines3d(treeb[i:(i+1),], lwd = treeb[i+1,]$lwd/1.73, 
               col = cols[treeb[i,"seg"]+1])
     }
   }
+  
+  par3d(windowRect = c(0,100,500,600))
+  view3d(theta = 0, phi = -75, zoom = .6)
   # Export movie
-  movie3d(spin3d(), movie = "second_tree", duration = 12, webshot = FALSE, dir = ".")
+  movie3d(spin3d(), movie = "tree_figb_leaf", duration = 12, fps = 20, webshot = FALSE, dir = ".")
 }
 
 if(!file.exists("tree_figc.gif")) {
-  d1 <- 112.5; d2 <- 157.5; a <- 22.5; lr <- 1.790; vr <- 1.732
-  
-  test_tree3 <- draw_3d_lsystem(axiom2, rules2, 8, tropism = c(-.02, 0, -1), e=.27)
+  # lr might have a typo in the book: try 1.079 instead of 1.790
+  d1 <- 112.5; d2 <- 157.5; a <- 22.5; lr <- 1.079; vr <- 1.732
+  tropism <- c(-.02, 0, -1); e = .27; n = 8
+  rulesc <- rules2(d1, d2, a, lr, vr)
+  treec <- points_3d_lsystem(axiom2, rulesc, n, tropism, e)
   # colors
   yb<-colorRampPalette(c("#1B0000","#4d2B0b","chocolate4"))
   # Find max number of tree segments, make last green 
-  cols <- c(yb(max(test_tree3$seg)-1),"green4")
+  cols <- c(yb(max(treec$seg)-1),"green4")
   # plot
   open3d()
-  plot3d(test_tree3, type = "n")
-  for (i in 1:(nrow(test_tree3)-1)) {
-    if(test_tree3[i,"seg"] < test_tree3[i+1,"seg"]) {
-      lines3d(test_tree3[i:(i+1),], lwd = test_tree3[i,]$lwd/1.73, 
-              col = cols[test_tree3[i,"seg"]+1])
+  plot3d(treec, type = "n")
+  for (i in 1:(nrow(treec)-1)) {
+    if(treec[i,"seg"] < treec[i+1,"seg"]) {
+      lines3d(treec[i:(i+1),], lwd = treec[i+1,]$lwd/1.73, 
+              col = cols[treec[i,"seg"]+1])
     }
   }
+  par3d(windowRect = c(0,100,500,600))
+  view3d(theta = 0, phi = -75, zoom = .6)
   # Export movie
-  movie3d(spin3d(), movie = "tree_figc", duration = 12, webshot = FALSE, dir = ".")
+  movie3d(spin3d(), movie = "tree_figc", fps = 20, duration = 12, webshot = FALSE, dir = ".")
 }
 
-if(!file.exists("tree_figd.gif")) {
-  d1 <- 180; d2 <- 252; a <- 36; lr <- 1.07; vr <- 1.732
-  test_tree4 <- draw_3d_lsystem(axiom2, rules2, 6, tropism = c(-.61, .77, -.19), e=.4)
-  # colors
-  yb<-colorRampPalette(c("#1B0000","#4d2B0b","chocolate4"))
-  # Find max number of tree segments, make last green 
-  cols <- c(yb(max(test_tree4$seg)-1),"green4")
-  # plot
-  open3d()
-  plot3d(test_tree4, type = "n")
-  for (i in 1:(nrow(test_tree4)-1)) {
-    if(test_tree4[i,"seg"] < test_tree4[i+1,"seg"]) {
-      lines3d(test_tree4[i:(i+1),], lwd = test_tree4[i,]$lwd/1.73, 
-              col = cols[test_tree4[i,"seg"]+1])
-    }
-  }
-  # Export movie
-  movie3d(spin3d(), movie = "tree_figd", duration = 12, webshot = FALSE, dir = ".")
-}
-
+# if(!file.exists("tree_figd.gif")) {
+#   d1 <- 180; d2 <- 252; a <- 36; lr <- 1.07; vr <- 1.732
+#   tropism <- c(-.61, .77, -.19); e = .27; n = 6
+#   
+#   rulesd <- rules2(d1, d2, a, lr, vr)
+#   treed <- points_3d_lsystem(axiom2, rulesd, n, tropism, e)
+#   # colors
+#   yb<-colorRampPalette(c("#1B0000","#4d2B0b","chocolate4"))
+#   # Find max number of tree segments, make last green 
+#   cols <- c(yb(max(treed$seg)-1),"green4")
+#   # plot
+#   open3d()
+#   plot3d(treed, type = "n")
+#   for (i in 1:(nrow(treed)-1)) {
+#     if(treed[i,"seg"] < treed[i+1,"seg"]) {
+#       lines3d(treed[i:(i+1),], lwd = treed[i+1,]$lwd/1.73, 
+#               col = cols[treed[i,"seg"]+1])
+#     }
+#   }
+#   par3d(windowRect = c(0,100,500,600))
+#   view3d(theta = 0, phi = -75, zoom = .6)
+#   # Export movie
+#   movie3d(spin3d(), movie = "tree_figd", fps = 20, duration = 12, webshot = FALSE, dir = ".")
+# }
