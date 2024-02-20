@@ -521,7 +521,7 @@ draw_3d_lsystem(treec)
 
 ![Treec](tree_figc_loop.gif)
 
-### Additions  
+### Addition: Polygon Leaves  
 The building block of a tree created here can be expanded to include many other features. For example, by including the `seg` segment number parameter color was added to the structure by tracking which generation a particular segment was added in.  
 Another feature that can be added with a small function is generating a leaf at the end of each branch. The `make_leaf` function below takes in the last two segments of a branch and:  
 
@@ -546,6 +546,38 @@ make_leaf <- function(pts, deg = 15) {
 This new function can then be added to the `draw_3d_lsystem` function as an extra condition in the `for` loop: if at the end of a branch, draw a leaf.  
 
 ![Treeb with leaves](tree_figb_leaf_loop.gif)
+
+### Addition: Polygon Branches  
+Another addition is that the branches can be drawn with a polygon as well, such as a simple cylinder. 
+
+```{r Trunk}
+#| code-summary: Trunk Function
+trunk <- function(r, pts, col) {
+  UP <- c(0,0,1) # direction of extrusion
+  p1 <- as.vector(pts[1,], mode = "numeric") # extract initial point
+  p2 <- as.vector(pts[2,], mode = "numeric") # extract final point
+  v1 <- p2 - p1 # vector in same direction as branch
+  v2 <- cross(UP,v1) # rotation axis
+  nv1 <- norm_vec(v1) # length of v1
+  nv2 <- norm_vec(v2) # length of v2
+  if(nv1*nv2 > 0){ # if not 0
+    ang <- acos((UP %*% v1)/(norm_vec(UP)*norm_vec(v1)))
+  } else {
+    ang <- 0
+  }
+  
+  n <- c(1:round(6*r/1.73)) # diameter of trunk
+  x <- r*cos(2*pi*n/max(n)) # x-coord
+  y <- r*sin(2*pi*n/max(n)) # y-coord
+  
+  extrude3d(x,y,thickness = nv1) %>% # extrude x,y to branch length
+    rotate3d(-ang[1],v2[1],v2[2],v2[3]) %>% # rotate around v2 by ang
+    translate3d(p1[1],p1[2],p1[3]) %>% # move to branch location
+    shade3d(specular = "black", col = col) # specular = black makes it not shiny
+}
+```
+
+![](treeb_leaves_trunk.png)
 
 ## Conclusion  
 Implementing a 3D L-system in R used several functions to handle vectors, store rules, apply rules, create the L-system, and plot the result. From Algorithmic Beauty of Plants, figures 2.8a - 2.8c were recreated with color and the addition of a leaf feature were explored.  

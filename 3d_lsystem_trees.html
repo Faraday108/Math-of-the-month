@@ -641,8 +641,8 @@ n = 8
 </figure>
 </div>
 </section>
-<section id="additions" class="level3">
-<h3 class="anchored" data-anchor-id="additions">Additions</h3>
+<section id="addition-polygon-leaves" class="level3">
+<h3 class="anchored" data-anchor-id="addition-polygon-leaves">Addition: Polygon Leaves</h3>
 <p>The building block of a tree created here can be expanded to include many other features. For example, by including the <code>seg</code> segment number parameter color was added to the structure by tracking which generation a particular segment was added in.<br>
 Another feature that can be added with a small function is generating a leaf at the end of each branch. The <code>make_leaf</code> function below takes in the last two segments of a branch and:</p>
 <ol type="1">
@@ -674,6 +674,39 @@ Another feature that can be added with a small function is generating a leaf at 
 <figcaption class="figure-caption">Treeb with leaves</figcaption>
 </figure>
 </div>
+</section>
+<section id="addition-polygon-branches" class="level3">
+<h3 class="anchored" data-anchor-id="addition-polygon-branches">Addition: Polygon Branches</h3>
+<p>Another addition is that the branches can be drawn with a polygon as well, such as a simple cylinder.</p>
+<div class="cell" data-hash="3d_lsystem_trees_cache/html/Trunk_758f7d734be6567035851393d64e7d84">
+<details>
+<summary>Trunk Function</summary>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>trunk <span class="ot">&lt;-</span> <span class="cf">function</span>(r, pts, col) {</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  UP <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">1</span>) <span class="co"># direction of extrusion</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  p1 <span class="ot">&lt;-</span> <span class="fu">as.vector</span>(pts[<span class="dv">1</span>,], <span class="at">mode =</span> <span class="st">"numeric"</span>) <span class="co"># extract initial point</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  p2 <span class="ot">&lt;-</span> <span class="fu">as.vector</span>(pts[<span class="dv">2</span>,], <span class="at">mode =</span> <span class="st">"numeric"</span>) <span class="co"># extract final point</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>  v1 <span class="ot">&lt;-</span> p2 <span class="sc">-</span> p1 <span class="co"># vector in same direction as branch</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  v2 <span class="ot">&lt;-</span> <span class="fu">cross</span>(UP,v1) <span class="co"># rotation axis</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>  nv1 <span class="ot">&lt;-</span> <span class="fu">norm_vec</span>(v1) <span class="co"># length of v1</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>  nv2 <span class="ot">&lt;-</span> <span class="fu">norm_vec</span>(v2) <span class="co"># length of v2</span></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span>(nv1<span class="sc">*</span>nv2 <span class="sc">&gt;</span> <span class="dv">0</span>){ <span class="co"># if not 0</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>    ang <span class="ot">&lt;-</span> <span class="fu">acos</span>((UP <span class="sc">%*%</span> v1)<span class="sc">/</span>(<span class="fu">norm_vec</span>(UP)<span class="sc">*</span><span class="fu">norm_vec</span>(v1)))</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>    ang <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>  n <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">1</span><span class="sc">:</span><span class="fu">round</span>(<span class="dv">6</span><span class="sc">*</span>r<span class="sc">/</span><span class="fl">1.73</span>)) <span class="co"># diameter of trunk</span></span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>  x <span class="ot">&lt;-</span> r<span class="sc">*</span><span class="fu">cos</span>(<span class="dv">2</span><span class="sc">*</span>pi<span class="sc">*</span>n<span class="sc">/</span><span class="fu">max</span>(n)) <span class="co"># x-coord</span></span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>  y <span class="ot">&lt;-</span> r<span class="sc">*</span><span class="fu">sin</span>(<span class="dv">2</span><span class="sc">*</span>pi<span class="sc">*</span>n<span class="sc">/</span><span class="fu">max</span>(n)) <span class="co"># y-coord</span></span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">extrude3d</span>(x,y,<span class="at">thickness =</span> nv1) <span class="sc">%&gt;%</span> <span class="co"># extrude x,y to branch length</span></span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>    <span class="fu">rotate3d</span>(<span class="sc">-</span>ang[<span class="dv">1</span>],v2[<span class="dv">1</span>],v2[<span class="dv">2</span>],v2[<span class="dv">3</span>]) <span class="sc">%&gt;%</span> <span class="co"># rotate around v2 by ang</span></span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>    <span class="fu">translate3d</span>(p1[<span class="dv">1</span>],p1[<span class="dv">2</span>],p1[<span class="dv">3</span>]) <span class="sc">%&gt;%</span> <span class="co"># move to branch location</span></span>
+<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a>    <span class="fu">shade3d</span>(<span class="at">specular =</span> <span class="st">"black"</span>, <span class="at">col =</span> col) <span class="co"># specular = black makes it not shiny</span></span>
+<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p><img src="treeb_leaves_trunk.png" class="img-fluid"></p>
 </section>
 </section>
 <section id="conclusion" class="level2">
