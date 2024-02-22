@@ -209,7 +209,7 @@ draw_3d_lsystem <- function(tree) {
 }
 
 # CREATE FUNCTION TO HANDLE THE GRAPH - BONUS LEAVES
-draw_3d_lsystem2 <- function(tree, fun = trunk) {
+draw_3d_lsystem2 <- function(tree) {
   # colors
   yb<-colorRampPalette(c("#1B0000","#4d2B0b","chocolate4"))
   # Find max number of tree segments, make last green 
@@ -221,9 +221,12 @@ draw_3d_lsystem2 <- function(tree, fun = trunk) {
   view3d(theta = 0, phi = -75, zoom = .6)
   plot3d(tree, type = "n")
   mseg <- max(tree$seg)
+  
   for (i in 1:(nrow(tree)-1)) {
-    if((tree[i,"seg"] < tree[i+1,"seg"]) & (tree[i+1,"seg"] < mseg)) {
-      fun(tree[i+1,]$lwd,tree[i:(i+1),1:3],col = cols[tree[i,"seg"]+1])
+    if(i == 1) {
+      trunk(tree[i+1,]$lwd,tree[i:(i+1),1:3],col = cols[tree[i,"seg"]+1])
+    } else if ((tree[i,"seg"] < tree[i+1,"seg"]) & (tree[i+1,"seg"] < mseg)) {
+      trunk2(tree[i+1,]$lwd,tree[(i-1):(i+1),1:3],col = cols[tree[i,"seg"]+1])
     }
     # It would be neat to add ability to draw "leaves"
     # Can rotate left and right around "U" vector 

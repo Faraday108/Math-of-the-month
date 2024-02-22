@@ -712,7 +712,98 @@ Another feature that can be added with a small function is generating a leaf at 
 <section id="conclusion" class="level2">
 <h2 class="anchored" data-anchor-id="conclusion">Conclusion</h2>
 <p>Implementing a 3D L-system in R used several functions to handle vectors, store rules, apply rules, create the L-system, and plot the result. From Algorithmic Beauty of Plants, figures 2.8a - 2.8c were recreated with color and the addition of a leaf feature were explored.<br>
-Further work on more detailed leaves, defining a branch polygon feature, adding variability in the structure via a stochastic 3d l-system, and more can be envisoned and may be explored at a future time. Ultimately, coding this in R was a great amount of fun combined with learning about 3d systems and storing information in lists.</p>
+Further work on more detailed leaves, defining a branch polygon feature, adding variability in the structure via a stochastic 3d l-system, and more can be envisioned and may be explored at a future time. Ultimately, coding this in R was a great amount of fun combined with learning about 3d systems and storing information in lists.</p>
+</section>
+<section id="ammendment---angling-the-branches" class="level2">
+<h2 class="anchored" data-anchor-id="ammendment---angling-the-branches">Ammendment - Angling the branches</h2>
+<p>When the branches all come from the same point it gives a distinctly unrealistic vibe. To make the branches appear more natural, I thought to move the initial point of each branch vector in a plane in the same direction as the original branch vector. The plane for the translation is established using the normal vector of the prior branch.<br>
+To accomplish this, we can define the normal vector of the prior branch as <span class="math inline">\(\vec{n}\)</span> to define a plane and the new branch vector to be <span class="math inline">\(\vec{u}\)</span>. To project <span class="math inline">\(\vec{u}\)</span> into the plane, we effectively need to remove the element of <span class="math inline">\(\vec{u}\)</span> in the direction of <span class="math inline">\(\vec{n}\)</span> as:</p>
+<p><span class="math display">\[
+\begin{aligned}
+\text{proj}_{\text{plane}}(\vec{u}) &amp;=
+\vec{u}-\text{proj}_{\vec{n}}(\vec{u}) \\
+&amp;= \vec{u}-\frac{\vec{u}\cdot\vec{n}}{|\vec{n}|^2}\vec{n}
+\end{aligned}
+\]</span></p>
+<p>This new projection vector can then be used to find a new starting point for the branch vector by moving a distance along <span class="math inline">\(\text{proj}_{\text{plane}}(\vec{u})\)</span> and adding it to the original starting point of the branch vector.<br>
+One amendment, since each branch is made up of two segments, is that if the angle between prior branch and next branch is small, then the next branch should <em>not</em> be altered. This is handled with a simple <code>for</code> test.</p>
+<div class="cell" data-hash="3d_lsystem_trees_cache/html/unnamed-chunk-2_34d2ec3d50d65ef280d659a1c7b045e5">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>trunk2 <span class="ot">&lt;-</span> <span class="cf">function</span>(r, pts, <span class="at">col =</span> <span class="st">"red"</span>, <span class="at">plot =</span> <span class="cn">FALSE</span>) {</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  <span class="co"># pts should have three points passed in</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  UP <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">1</span>) <span class="co"># up vector (direction of extrusion)</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  p1 <span class="ot">&lt;-</span> <span class="fu">as.vector</span>(pts[<span class="dv">1</span>,], <span class="at">mode =</span> <span class="st">"numeric"</span>)</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>  p2 <span class="ot">&lt;-</span> <span class="fu">as.vector</span>(pts[<span class="dv">2</span>,], <span class="at">mode =</span> <span class="st">"numeric"</span>)</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>  p3 <span class="ot">&lt;-</span> <span class="fu">as.vector</span>(pts[<span class="dv">3</span>,], <span class="at">mode =</span> <span class="st">"numeric"</span>)</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>  v1 <span class="ot">&lt;-</span> p2 <span class="sc">-</span> p1 <span class="co"># previous branch vector</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>  v2 <span class="ot">&lt;-</span> p3 <span class="sc">-</span> p2 <span class="co"># next branch vector</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>  <span class="co"># angle between prior and current branch segment</span></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>  <span class="co"># if this is small, don't offset the next branch</span></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>  ba <span class="ot">&lt;-</span> <span class="fu">acos</span>((v1 <span class="sc">%*%</span> v2)<span class="sc">/</span>(<span class="fu">norm_vec</span>(v1)<span class="sc">*</span><span class="fu">norm_vec</span>(v2)))</span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (ba <span class="sc">&lt;</span> .<span class="dv">15</span>) {</span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>    <span class="do">### don't offset branch </span><span class="al">###</span></span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>    vr <span class="ot">&lt;-</span> <span class="fu">cross</span>(UP,v2) <span class="co"># rotation vector</span></span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>    p2t <span class="ot">&lt;-</span> p2 <span class="co"># offset = no offset</span></span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>    nv1 <span class="ot">&lt;-</span> <span class="fu">norm_vec</span>(v2) <span class="co"># norm for v1</span></span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>    nv2 <span class="ot">&lt;-</span> <span class="fu">norm_vec</span>(vr) <span class="co"># norm for v2</span></span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>    nv3 <span class="ot">&lt;-</span> nv1 </span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span>(nv1<span class="sc">*</span>nv2 <span class="sc">&gt;</span> <span class="dv">0</span>){ <span class="co"># handles division by 0</span></span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a>      ang <span class="ot">&lt;-</span> <span class="fu">acos</span>((UP <span class="sc">%*%</span> v2)<span class="sc">/</span>(<span class="fu">norm_vec</span>(UP)<span class="sc">*</span><span class="fu">norm_vec</span>(v2)))</span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">else</span> {</span>
+<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a>      ang <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
+<span id="cb13-26"><a href="#cb13-26" aria-hidden="true" tabindex="-1"></a>    <span class="do">### do offset branch </span><span class="al">###</span></span>
+<span id="cb13-27"><a href="#cb13-27" aria-hidden="true" tabindex="-1"></a>    <span class="co"># project v2 into plane established by normal of v1</span></span>
+<span id="cb13-28"><a href="#cb13-28" aria-hidden="true" tabindex="-1"></a>    v2p <span class="ot">&lt;-</span> v2 <span class="sc">-</span> <span class="fu">c</span>(v2 <span class="sc">%*%</span> v1) <span class="sc">*</span> v1 <span class="sc">/</span> <span class="fu">norm_vec</span>(v1)<span class="sc">^</span><span class="dv">2</span></span>
+<span id="cb13-29"><a href="#cb13-29" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">norm_vec</span>(v2p) <span class="sc">&gt;</span> <span class="dv">0</span>) {</span>
+<span id="cb13-30"><a href="#cb13-30" aria-hidden="true" tabindex="-1"></a>      v2p_n <span class="ot">&lt;-</span> v2p<span class="sc">/</span><span class="fu">norm_vec</span>(v2p) <span class="co"># normalize v2 projection</span></span>
+<span id="cb13-31"><a href="#cb13-31" aria-hidden="true" tabindex="-1"></a>      <span class="co"># translate p2 distance along v2p_n</span></span>
+<span id="cb13-32"><a href="#cb13-32" aria-hidden="true" tabindex="-1"></a>      p2t <span class="ot">&lt;-</span> p2 <span class="sc">+</span> <span class="fl">1.732</span><span class="sc">*</span>r<span class="sc">/</span><span class="dv">2</span><span class="sc">*</span>v2p_n</span>
+<span id="cb13-33"><a href="#cb13-33" aria-hidden="true" tabindex="-1"></a>      v3 <span class="ot">&lt;-</span> p3 <span class="sc">-</span> p2t <span class="co"># new vector in direction of translated p2 to p3</span></span>
+<span id="cb13-34"><a href="#cb13-34" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">else</span> {</span>
+<span id="cb13-35"><a href="#cb13-35" aria-hidden="true" tabindex="-1"></a>      p2t <span class="ot">&lt;-</span> p2</span>
+<span id="cb13-36"><a href="#cb13-36" aria-hidden="true" tabindex="-1"></a>      v3 <span class="ot">&lt;-</span> p3 <span class="sc">-</span> p2t</span>
+<span id="cb13-37"><a href="#cb13-37" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb13-38"><a href="#cb13-38" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb13-39"><a href="#cb13-39" aria-hidden="true" tabindex="-1"></a>    vr <span class="ot">&lt;-</span> <span class="fu">cross</span>(UP,v3) <span class="co"># rotation vector</span></span>
+<span id="cb13-40"><a href="#cb13-40" aria-hidden="true" tabindex="-1"></a>    nvr <span class="ot">&lt;-</span> <span class="fu">norm_vec</span>(vr)</span>
+<span id="cb13-41"><a href="#cb13-41" aria-hidden="true" tabindex="-1"></a>    nv3 <span class="ot">&lt;-</span> <span class="fu">norm_vec</span>(v3)</span>
+<span id="cb13-42"><a href="#cb13-42" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span>(nvr<span class="sc">*</span>nv3 <span class="sc">&gt;</span> <span class="dv">0</span>) { <span class="co"># handles case of angle being 0</span></span>
+<span id="cb13-43"><a href="#cb13-43" aria-hidden="true" tabindex="-1"></a>      ang <span class="ot">&lt;-</span> <span class="fu">acos</span>((UP <span class="sc">%*%</span> v3)<span class="sc">/</span>(<span class="fu">norm_vec</span>(UP)<span class="sc">*</span><span class="fu">norm_vec</span>(v3))) <span class="co"># angle</span></span>
+<span id="cb13-44"><a href="#cb13-44" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">else</span> {</span>
+<span id="cb13-45"><a href="#cb13-45" aria-hidden="true" tabindex="-1"></a>      ang <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb13-46"><a href="#cb13-46" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb13-47"><a href="#cb13-47" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb13-48"><a href="#cb13-48" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb13-49"><a href="#cb13-49" aria-hidden="true" tabindex="-1"></a>  n <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">1</span><span class="sc">:</span><span class="fu">round</span>(<span class="dv">6</span><span class="sc">*</span>r<span class="sc">/</span><span class="fl">1.73</span>))</span>
+<span id="cb13-50"><a href="#cb13-50" aria-hidden="true" tabindex="-1"></a>  x <span class="ot">&lt;-</span> r<span class="sc">*</span><span class="fu">cos</span>(<span class="dv">2</span><span class="sc">*</span>pi<span class="sc">*</span>n<span class="sc">/</span><span class="fu">max</span>(n))</span>
+<span id="cb13-51"><a href="#cb13-51" aria-hidden="true" tabindex="-1"></a>  y <span class="ot">&lt;-</span> r<span class="sc">*</span><span class="fu">sin</span>(<span class="dv">2</span><span class="sc">*</span>pi<span class="sc">*</span>n<span class="sc">/</span><span class="fu">max</span>(n))</span>
+<span id="cb13-52"><a href="#cb13-52" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb13-53"><a href="#cb13-53" aria-hidden="true" tabindex="-1"></a>  <span class="do">## This rotates around the 'top' of the branch</span></span>
+<span id="cb13-54"><a href="#cb13-54" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Problem happens when two branches meet at a non-tertiary point</span></span>
+<span id="cb13-55"><a href="#cb13-55" aria-hidden="true" tabindex="-1"></a>  <span class="co"># As these should be straight. Would need to operate on more context</span></span>
+<span id="cb13-56"><a href="#cb13-56" aria-hidden="true" tabindex="-1"></a>  <span class="fu">extrude3d</span>(x,y,<span class="at">thickness =</span> nv3) <span class="sc">%&gt;%</span> </span>
+<span id="cb13-57"><a href="#cb13-57" aria-hidden="true" tabindex="-1"></a>    <span class="fu">rotate3d</span>(<span class="sc">-</span>ang[<span class="dv">1</span>],vr[<span class="dv">1</span>],vr[<span class="dv">2</span>],vr[<span class="dv">3</span>]) <span class="sc">%&gt;%</span> </span>
+<span id="cb13-58"><a href="#cb13-58" aria-hidden="true" tabindex="-1"></a>    <span class="fu">translate3d</span>(p2t[<span class="dv">1</span>],p2t[<span class="dv">2</span>],p2t[<span class="dv">3</span>]) <span class="sc">%&gt;%</span></span>
+<span id="cb13-59"><a href="#cb13-59" aria-hidden="true" tabindex="-1"></a>    <span class="fu">shade3d</span>(<span class="at">specular =</span> <span class="st">"black"</span>, <span class="at">col =</span> col)</span>
+<span id="cb13-60"><a href="#cb13-60" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="treea_branches_adjusted.png" class="img-fluid figure-img"></p>
+<figcaption class="figure-caption">Adjusted Branches on Tree A</figcaption>
+</figure>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="treeb_branches_adjusted.png" class="img-fluid figure-img"></p>
+<figcaption class="figure-caption">Adjusted Branches on Tree B</figcaption>
+</figure>
+</div>
 </section>
 
 </main>

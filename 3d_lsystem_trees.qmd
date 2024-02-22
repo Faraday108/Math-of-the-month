@@ -581,4 +581,86 @@ trunk <- function(r, pts, col) {
 
 ## Conclusion  
 Implementing a 3D L-system in R used several functions to handle vectors, store rules, apply rules, create the L-system, and plot the result. From Algorithmic Beauty of Plants, figures 2.8a - 2.8c were recreated with color and the addition of a leaf feature were explored.  
-Further work on more detailed leaves, defining a branch polygon feature, adding variability in the structure via a stochastic 3d l-system, and more can be envisoned and may be explored at a future time. Ultimately, coding this in R was a great amount of fun combined with learning about 3d systems and storing information in lists.  
+Further work on more detailed leaves, defining a branch polygon feature, adding variability in the structure via a stochastic 3d l-system, and more can be envisioned and may be explored at a future time. Ultimately, coding this in R was a great amount of fun combined with learning about 3d systems and storing information in lists.  
+
+## Ammendment - Angling the branches  
+When the branches all come from the same point it gives a distinctly unrealistic vibe. To make the branches appear more natural, I thought to move the initial point of each branch vector in a plane in the same direction as the original branch vector. The plane for the translation is established using the normal vector of the prior branch.  
+To accomplish this, we can define the normal vector of the prior branch as $\vec{n}$ to define a plane and the new branch vector to be $\vec{u}$. To project $\vec{u}$ into the plane, we effectively need to remove the element of $\vec{u}$ in the direction of $\vec{n}$ as: 
+
+$$
+\begin{aligned}
+\text{proj}_{\text{plane}}(\vec{u}) &= 
+\vec{u}-\text{proj}_{\vec{n}}(\vec{u}) \\
+&= \vec{u}-\frac{\vec{u}\cdot\vec{n}}{|\vec{n}|^2}\vec{n}
+\end{aligned}
+$$
+
+This new projection vector can then be used to find a new starting point for the branch vector by moving a distance along $\text{proj}_{\text{plane}}(\vec{u})$ and adding it to the original starting point of the branch vector.  
+One amendment, since each branch is made up of two segments, is that if the angle between prior branch and next branch is small, then the next branch should *not* be altered. This is handled with a simple `for` test. 
+
+```{r}
+trunk2 <- function(r, pts, col = "red", plot = FALSE) {
+  # pts should have three points passed in
+  UP <- c(0,0,1) # up vector (direction of extrusion)
+  p1 <- as.vector(pts[1,], mode = "numeric")
+  p2 <- as.vector(pts[2,], mode = "numeric")
+  p3 <- as.vector(pts[3,], mode = "numeric")
+  v1 <- p2 - p1 # previous branch vector
+  v2 <- p3 - p2 # next branch vector
+  
+  # angle between prior and current branch segment
+  # if this is small, don't offset the next branch
+  ba <- acos((v1 %*% v2)/(norm_vec(v1)*norm_vec(v2)))
+  if (ba < .15) {
+    ### don't offset branch ###
+    vr <- cross(UP,v2) # rotation vector
+    p2t <- p2 # offset = no offset
+    nv1 <- norm_vec(v2) # norm for v1
+    nv2 <- norm_vec(vr) # norm for v2
+    nv3 <- nv1 
+    if(nv1*nv2 > 0){ # handles division by 0
+      ang <- acos((UP %*% v2)/(norm_vec(UP)*norm_vec(v2)))
+    } else {
+      ang <- 0
+    }
+  } else {
+    ### do offset branch ###
+    # project v2 into plane established by normal of v1
+    v2p <- v2 - c(v2 %*% v1) * v1 / norm_vec(v1)^2
+    if(norm_vec(v2p) > 0) {
+      v2p_n <- v2p/norm_vec(v2p) # normalize v2 projection
+      # translate p2 distance along v2p_n
+      p2t <- p2 + 1.732*r/2*v2p_n
+      v3 <- p3 - p2t # new vector in direction of translated p2 to p3
+    } else {
+      p2t <- p2
+      v3 <- p3 - p2t
+    }
+    
+    vr <- cross(UP,v3) # rotation vector
+    nvr <- norm_vec(vr)
+    nv3 <- norm_vec(v3)
+    if(nvr*nv3 > 0) { # handles case of angle being 0
+      ang <- acos((UP %*% v3)/(norm_vec(UP)*norm_vec(v3))) # angle
+    } else {
+      ang <- 0
+    }
+  }
+  
+  n <- c(1:round(6*r/1.73))
+  x <- r*cos(2*pi*n/max(n))
+  y <- r*sin(2*pi*n/max(n))
+  
+  ## This rotates around the 'top' of the branch
+  # Problem happens when two branches meet at a non-tertiary point
+  # As these should be straight. Would need to operate on more context
+  extrude3d(x,y,thickness = nv3) %>% 
+    rotate3d(-ang[1],vr[1],vr[2],vr[3]) %>% 
+    translate3d(p2t[1],p2t[2],p2t[3]) %>%
+    shade3d(specular = "black", col = col)
+}
+```
+
+![Adjusted Branches on Tree A](treea_branches_adjusted.png)
+
+![Adjusted Branches on Tree B](treeb_branches_adjusted.png)
