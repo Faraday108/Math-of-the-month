@@ -664,3 +664,7 @@ trunk2 <- function(r, pts, col = "red", plot = FALSE) {
 ![Adjusted Branches on Tree A](treea_branches_adjusted.png)
 
 ![Adjusted Branches on Tree B](treeb_branches_adjusted.png)
+
+![Adjusted Branches on Tree C](treec_branches_adjusted.png)
+
+![Adjusted Branches on Tree C - Zoom](treecz_branches_adjusted.png)
