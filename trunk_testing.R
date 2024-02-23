@@ -43,7 +43,7 @@ trunk2 <- function(r, pts, col = "red", plot = FALSE) {
   # angle between prior and current branch segment
   # if this is small, don't offset the next branch
   ba <- acos((v1 %*% v2)/(norm_vec(v1)*norm_vec(v2)))
-  if (ba < .15) {
+  if (ba < .3) {
     ### don't offset branch ###
     vr <- cross(UP,v2) # rotation vector
     p2t <- p2 # offset = no offset
