@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.450">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Mandelbrot and Julia Set</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="Mandelbrot_Julia_Writeup_files/libs/clipboard/clipboard.min.js"></script>
+<script src="Mandelbrot_Julia_Writeup_files/libs/quarto-html/quarto.js"></script>
+<script src="Mandelbrot_Julia_Writeup_files/libs/quarto-html/popper.min.js"></script>
+<script src="Mandelbrot_Julia_Writeup_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="Mandelbrot_Julia_Writeup_files/libs/quarto-html/anchor.min.js"></script>
+<link href="Mandelbrot_Julia_Writeup_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="Mandelbrot_Julia_Writeup_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="Mandelbrot_Julia_Writeup_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="Mandelbrot_Julia_Writeup_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="Mandelbrot_Julia_Writeup_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Mandelbrot and Julia Set</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+</header>
+
+<section id="background" class="level2">
+<h2 class="anchored" data-anchor-id="background">Background</h2>
+<p>The Mandelbrot set was a first effort of mine to coax out of R methods outside of my primary use of the language - statistic and data processing. The Mandelbrot set, as described on <a href="https://en.wikipedia.org/wiki/Mandelbrot_set">Wikipedia</a> is “defined in the complex plane as the complex numbers <span class="math inline">\(c\)</span> for which the function <span class="math inline">\(f_c(z)=z^2+c\)</span> does not diverge to infinity when iterated starting at <span class="math inline">\(z=0\)</span>.” When the real and imaginary parts of <span class="math inline">\(c\)</span> are used as image coordinates, each pixel corresponds to membership or departure from the set. To get the beautiful coloration that is emblematic to visualizations of the set, points that escape from the set are colored according to how soon the sequence diverges.</p>
+</section>
+<section id="create-mandelbrot-set-in-r" class="level2">
+<h2 class="anchored" data-anchor-id="create-mandelbrot-set-in-r">Create Mandelbrot set in R</h2>
+<section id="initial-function-setup" class="level3">
+<h3 class="anchored" data-anchor-id="initial-function-setup">Initial Function Setup</h3>
+<p>A naive implementation in R is to create a grid of points and, using for loops, iterate the function <span class="math inline">\(f_c(z)\)</span> over each point up to a max number of iterations to establish escape count or membership. In R, uising for loops proves to be slow and a massive speedup can be achieved using R’s vectorized nature as described <a href="https://www.r-bloggers.com/2014/12/the-mandelbrot-set-in-r/">here</a>.<br>
+The main idea is that instead of a for loop being passed each individual complex number, the entire grid can be operated on simultaneously. To accomplish this, I created a function called <code>vector_mandelbrot</code> that takes several parameters to setup the calculation.</p>
+<ol type="1">
+<li>Creates a grid along <code>x</code> from <code>(xmin, xmax)</code> and <code>y</code> from <code>(ymin, ymax)</code>of length <code>xpixel</code> and <code>ypixel</code> respectively.</li>
+<li>The <code>x</code> and <code>y</code> values are then passed to <code>outer(x, y*1i, FUN = "+")</code> to create a grid in the complex plane as <code>x+yi</code></li>
+<li>Creates matrix <code>z</code> and <code>k</code> to contain values of <code>f_c(z)</code> and iteration counts</li>
+<li>Calculates complex numbers in <code>for(i in 1:max_iteration)</code> by:
+<ol type="i">
+<li>Finding <code>index</code> where <code>abs(z)&lt;threshold</code> to see whether a point has escaped</li>
+<li>For points that haven’t escaped, find <code>z[index] = z[index]^2 + c[index]</code></li>
+<li>For points that haven’t escaped, increment count <code>k[index] = k[index]+1</code><br>
+</li>
+</ol></li>
+<li>Returns the iteration count matrix <code>k</code>.</li>
+</ol>
+<div class="cell" data-hash="Mandelbrot_Julia_Writeup_cache/html/Mandelbrot Membership Function_782abab2d17a0563ddda3555bda07dde">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(RColorBrewer)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>vector_mandelbrot_0 <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">xmin =</span> <span class="sc">-</span><span class="dv">2</span>, <span class="at">xmax =</span> .<span class="dv">5</span>, <span class="at">xpixel =</span> <span class="dv">500</span>, <span class="at">ymax =</span> <span class="fl">1.2</span>, <span class="at">ymin =</span> <span class="sc">-</span><span class="fl">1.2</span>, <span class="at">ypixel =</span> <span class="dv">500</span>, <span class="at">max_iterations =</span> <span class="dv">500</span>, <span class="at">showimage =</span> <span class="cn">TRUE</span>, <span class="at">plt_color =</span> <span class="st">"RdBu"</span>) {</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="co"># My initial naive mandelbrot implementation didn't take advantage of R's vectorized nature and was slow. </span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="co"># The following version that calculates the whole matrix simultaneously was inspired by Myles Harrison at https://www.r-bloggers.com/2014/12/the-mandelbrot-set-in-r/</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  x <span class="ot">&lt;-</span> <span class="fu">seq</span>(xmin, xmax, <span class="at">length.out =</span> xpixel)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  y <span class="ot">&lt;-</span> <span class="fu">seq</span>(ymin, ymax, <span class="at">length.out =</span> ypixel)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Produces matrix of complex numbers, note that 'x' changes across the columns and 'y' changes down the rows. </span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="co"># C is the value added in each iteration of Mandelbrot set</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  c <span class="ot">&lt;-</span> <span class="fu">outer</span>(x, y <span class="sc">*</span> 1i, <span class="at">FUN =</span> <span class="st">"+"</span>)</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Initialize empty matrix to hold calculated z's</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  z <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="dv">0</span>, <span class="at">nrow =</span> xpixel, <span class="at">ncol =</span> ypixel)</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Initialize empty matrix to hold iteration counts</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  k <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="dv">0</span>, <span class="at">nrow =</span> xpixel, <span class="at">ncol =</span> ypixel)</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Calculate the complex numbers up till escape and escape iteration. </span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (j <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>max_iterations) {</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Note escape value of 1000. If this is changed, make sure to alter in calculation of nu below. </span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>    index <span class="ot">&lt;-</span> <span class="fu">which</span>(<span class="fu">abs</span>(z) <span class="sc">&lt;</span> <span class="dv">1000</span>)</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>    z[index] <span class="ot">&lt;-</span> z[index]<span class="sc">^</span><span class="dv">2</span> <span class="sc">+</span> c[index]</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>    k[index] <span class="ot">&lt;-</span> k[index] <span class="sc">+</span> <span class="dv">1</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>(<span class="at">k =</span> k, <span class="at">z =</span> z)</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+</section>
+<section id="visualize-basic-membership" class="level3">
+<h3 class="anchored" data-anchor-id="visualize-basic-membership">Visualize Basic Membership</h3>
+<p>The above function can be run with the defaults and the result can be passed to the <code>image</code> function for a simple visualization. To see membership, pixels that have a max value are considered part of the set (colored black) and all other pixels as not in the set (colored white).</p>
+<div class="cell" data-hash="Mandelbrot_Julia_Writeup_cache/html/Basic visual_8807c0364db2edaba007cc69ca60fea7">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>results <span class="ot">&lt;-</span> <span class="fu">vector_mandelbrot_0</span>()</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>k <span class="ot">&lt;-</span> results<span class="sc">$</span>k</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">image</span>(<span class="fu">ifelse</span>(k <span class="sc">==</span> <span class="dv">500</span>, <span class="dv">0</span>,<span class="dv">1</span>), <span class="at">asp =</span> <span class="dv">1</span>, <span class="at">col =</span> <span class="fu">c</span>(<span class="st">"black"</span>, <span class="st">"white"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="Mandelbrot_Julia_Writeup_files/figure-html/Basic%20visual-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="enhance-coloring" class="level3">
+<h3 class="anchored" data-anchor-id="enhance-coloring">Enhance coloring</h3>
+<p>TO get the stunning multi-colored images of the Mandelbrot set, an additional piece of information can be considered - included in <code>k</code> is how quickly a point escapes from the Mandelbrot set. This can be used to add color to points that were formerly colored <code>white</code>.<br>
+The challenge inherent in coloring this set is that the distribution of points is very asymetric; there are many points that are in the set, and many points that diverge quickly with only a few at other values. A basic histogram illustrates this point:</p>
+<div class="cell" data-hash="Mandelbrot_Julia_Writeup_cache/html/escape histogram_727cbab65e93ec0d750032fa7179e2fc">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Helper function to convert output matrix to long-format</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>matrix_to_long <span class="ot">&lt;-</span> <span class="cf">function</span>(m, x, y, max_iterations) {</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  m <span class="sc">%&gt;%</span> <span class="fu">data.frame</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Add column names</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">set_names</span>(y) <span class="sc">%&gt;%</span> </span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Add row for row names</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">cbind</span>(<span class="at">x =</span> x, .) <span class="sc">%&gt;%</span> </span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Pivot to long</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">pivot_longer</span>(<span class="sc">!</span>x, <span class="at">names_to =</span> <span class="st">"y"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">y =</span> <span class="fu">as.numeric</span>(y)) <span class="sc">%&gt;%</span> </span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Set points in set to 0</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">value =</span> <span class="fu">ifelse</span>(value <span class="sc">==</span> max_iterations, <span class="dv">0</span>, value))</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="sc">-</span><span class="dv">2</span>, .<span class="dv">5</span>, <span class="at">length.out=</span><span class="dv">500</span>)</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="sc">-</span><span class="fl">1.2</span>, <span class="fl">1.2</span>, <span class="at">length.out=</span><span class="dv">500</span>)</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>k_long <span class="ot">&lt;-</span> <span class="fu">matrix_to_long</span>(k, x, y, <span class="dv">500</span>)</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(k_long, <span class="fu">aes</span>(<span class="at">x =</span> value)) <span class="sc">+</span> </span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_histogram</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="Mandelbrot_Julia_Writeup_files/figure-html/escape%20histogram-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>Using this distribution to color the set is underwhelming:</p>
+<div class="cell" data-hash="Mandelbrot_Julia_Writeup_cache/html/Initial visual bins_8f4bbeebdcb3346f1d3f674ff6b390f5">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Note that the use of outer expands the first variable x along the column and y along the row. </span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Convert escape iterations and complex numbers to long dataframe to aid in coloring. </span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>mandelset <span class="ot">&lt;-</span> <span class="fu">matrix_to_long</span>(k, x, y, <span class="dv">500</span>)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>zn <span class="ot">&lt;-</span> <span class="fu">matrix_to_long</span>(results<span class="sc">$</span>z, x, y, <span class="dv">500</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="st">"zn"</span> <span class="ot">=</span> <span class="st">"value"</span>)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>mandelset <span class="ot">&lt;-</span> <span class="fu">left_join</span>(mandelset, zn, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"x"</span>, <span class="st">"y"</span>))</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="fu">image</span>(x,y,<span class="fu">t</span>(<span class="fu">matrix</span>(mandelset<span class="sc">$</span>value, <span class="at">nrow =</span> <span class="dv">500</span>)), <span class="at">asp =</span> <span class="dv">1</span>, </span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>      <span class="at">col =</span> <span class="fu">colorRampPalette</span>(<span class="fu">c</span>(<span class="st">"white"</span>, <span class="st">"black"</span>))(<span class="dv">500</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="Mandelbrot_Julia_Writeup_files/figure-html/Initial%20visual%20bins-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>A method to smooth this distribution is called “Histogram Binning” and was found on <a href="https://en.wikipedia.org/wiki/Plotting_algorithms_for_the_Mandelbrot_set">Wikipedia - Plotting algorithms for the Mandelbrot set</a></p>
+<p>The idea behind this method is that the above histogram can be altered by changing the scale to [0, 1] instead of [0, maxiteration] and evenly distributes colors to the same proportional area. The method is implemented on long-format escape counts <code>k</code>:</p>
+<ol type="1">
+<li>Group together all similar escape values <code>group_by(value)</code></li>
+<li>Find total number of each escape value <code>summarize(n = n())</code></li>
+<li>Create new color variable as proportion of each bin to total number of counts <code>mutate(color = n/sum(n))</code></li>
+<li>Change the color variable to be the cumulative sum <code>mutate(color = cumsum(color))</code></li>
+</ol>
+<p>These new <code>colors</code> need to be mapped back to the original set of counts which can be done with a <code>left_join</code> and selecting <code>value</code>, the iteration count column, to join by. Looking at a new histogram of these values, the distribution of colors is much better.</p>
+<div class="cell" data-hash="Mandelbrot_Julia_Writeup_cache/html/Histogram binning_ca9feaead7bb3df0729829ee7573831f">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Histogram binning of colors as described at Wikipedia: https://en.wikipedia.org/wiki/Plotting_algorithms_for_the_Mandelbrot_set</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Changes iteration at escape to [0,1] scale with a more even weighting based on number of times an escape value shows up. </span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>colors <span class="ot">&lt;-</span> mandelset <span class="sc">%&gt;%</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(value) <span class="sc">%&gt;%</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">n =</span> <span class="fu">n</span>()) <span class="sc">%&gt;%</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">color =</span> n<span class="sc">/</span><span class="fu">sum</span>(n)) <span class="sc">%&gt;%</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">color =</span> <span class="fu">cumsum</span>(color)) <span class="sc">%&gt;%</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>n) <span class="sc">%&gt;%</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">color2 =</span> <span class="fu">lag</span>(color))</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Combine the </span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>mandelset <span class="ot">&lt;-</span> <span class="fu">left_join</span>(mandelset, colors, <span class="at">by =</span> <span class="st">"value"</span>)</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(mandelset, <span class="fu">aes</span>(<span class="at">x =</span> color)) <span class="sc">+</span> </span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_histogram</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="Mandelbrot_Julia_Writeup_files/figure-html/Histogram%20binning-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>And using this new distribution of colors to visualize the set:</p>
+<div class="cell" data-hash="Mandelbrot_Julia_Writeup_cache/html/binned colors_8b410a6fc458b21afe71f179f82a2ddb">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">image</span>(x,y,<span class="fu">t</span>(<span class="fu">matrix</span>(mandelset<span class="sc">$</span>color, <span class="at">nrow =</span> <span class="dv">500</span>)), <span class="at">asp =</span> <span class="dv">1</span>, </span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>      <span class="at">col =</span> <span class="fu">colorRampPalette</span>(<span class="fu">c</span>(<span class="st">"white"</span>, <span class="st">"black"</span>))(<span class="dv">500</span>), </span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>      <span class="at">ylab =</span> <span class="st">"Im(z)"</span>, <span class="at">xlab =</span> <span class="st">"Re(z)"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="Mandelbrot_Julia_Writeup_files/figure-html/binned%20colors-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="smoothing" class="level3">
+<h3 class="anchored" data-anchor-id="smoothing">Smoothing</h3>
+<p>A final piece of the rendering explored here is to smooth the color distribution. The histogram binning above leaves characteristic ‘bands’ of colors where the escape counts change. One final enhancement is these bands can be smoothed by interpolating between adjacent colors.<br>
+One method for this is found at <a href="https://linas.org/art-gallery/escape/escape.html">Renormalizing the Mandelbrot Escape</a>. The idea behind this method is that there is additional information that can be retrieved about how quickly a point diverges. Up to this point, the iteration count has been used which is an integer value that indicates when <span class="math inline">\(|z_n|&gt;\text{cutoff}\)</span>. Considering the function <span class="math inline">\(f_c(z)=z^2+c\)</span>, point that escapes the set will have satisfy <span class="math inline">\(\text{cutoff}&lt;|z_n|&lt;\text{cutoff}^2\)</span>. If a point is below the cutoff it will be part of the set establishing the lower bound, and if it is above the cutoff it must be bounded on the top as <span class="math inline">\(z_{n+1} = z_n^2+c\)</span>. Choosing a larger cutoff value makes the effect of <span class="math inline">\(c\)</span> negligible.<br>
+Since <span class="math inline">\(z_n\)</span> is bounded, we can use it to establish a fractional iteration count using the boundary cutoff as <span class="math inline">\(\nu(z_n)=\log_2(\log_{\text{cutoff}}(|z_n|))\)</span>. This relationship effectively takes <span class="math inline">\(|z_n|\)</span> and with the first logarithm, converts it to a value 1 to 2 and with the second to a value 0 to 1.<br>
+This fractional iteration <span class="math inline">\(\nu\)</span> can then be used to interpolate between the color assigned to a particular iteration count and the next color creating a smooth transition between bands. In R, this looks like <code>smooth_color = color + (next_color - color) * nu</code>; when <code>nu = 1</code>, <code>smooth_color</code> will be equal to <code>next_color</code>, when <code>nu = 0</code>, <code>smooth_color</code> will be equal to <code>color</code>, and otherwise it’ll be a linear combination of the two.</p>
+<div class="cell" data-hash="Mandelbrot_Julia_Writeup_cache/html/unnamed-chunk-1_e6758207d7d476db040f747fe44f7a46">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># unneeded</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="co"># mandelset &lt;- mandelset %&gt;%</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="co">#   mutate(nu = ifelse(value == 0, value[which(k == 500)],</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="co">#                      value[which(k &lt; 500)] + 1 - </span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="co">#                        log(log(abs(zn[which(k &lt; 500)]))/log(1000))/log(2)))</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Logarithm function that handles the cases when values less than 1 are input </span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="co"># to the double logarithm which will happen for all points in the set. </span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>log0 <span class="ot">&lt;-</span> <span class="cf">function</span>(x) {</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>  ret <span class="ot">&lt;-</span> <span class="fu">vector</span>(<span class="at">mode =</span> <span class="st">"numeric"</span>, <span class="at">length =</span> <span class="fu">length</span>(x))</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>  ret[<span class="fu">which</span>(x <span class="sc">&gt;</span> <span class="dv">1</span>)] <span class="ot">&lt;-</span> <span class="fu">log</span>(x[<span class="fu">which</span>(x <span class="sc">&gt;</span> <span class="dv">1</span>)])</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>  ret[<span class="fu">which</span>(x <span class="sc">&lt;=</span> <span class="dv">1</span>)] <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>  ret</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>mandelset <span class="ot">&lt;-</span> mandelset <span class="sc">%&gt;%</span></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">nu =</span> <span class="fu">ifelse</span>(value <span class="sc">==</span> <span class="dv">0</span>, <span class="dv">0</span>, <span class="fu">log0</span>(<span class="fu">log0</span>(<span class="fu">abs</span>(zn))<span class="sc">/</span><span class="fu">log</span>(<span class="dv">1000</span>))<span class="sc">/</span><span class="fu">log</span>(<span class="dv">2</span>)))</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a><span class="co"># mandelset_nu &lt;- mandelset$value + 1 - log(log(abs(mandelset$zn))/log(1000))/log(2)</span></span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a><span class="co"># Interpolate between colors</span></span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>mandelset <span class="ot">&lt;-</span> mandelset <span class="sc">%&gt;%</span> </span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">scolor =</span> color <span class="sc">+</span> (color2 <span class="sc">-</span> color)<span class="sc">*</span>nu)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<section id="fractional-iterations-plot" class="level4">
+<h4 class="anchored" data-anchor-id="fractional-iterations-plot">Fractional Iterations Plot</h4>
+<p>The computed <span class="math inline">\(\nu(z)\)</span> can be plotted:</p>
+<div class="cell" data-hash="Mandelbrot_Julia_Writeup_cache/html/Fractional iterations_f8bd2adf44b9a3815859038b272f5b2c">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">image</span>(x,y,<span class="fu">t</span>(<span class="fu">matrix</span>(mandelset<span class="sc">$</span>nu, <span class="at">nrow =</span> <span class="dv">500</span>)), <span class="at">asp =</span> <span class="dv">1</span>, </span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>      <span class="at">col =</span> <span class="fu">colorRampPalette</span>(<span class="fu">c</span>(<span class="st">"white"</span>, <span class="st">"black"</span>))(<span class="dv">10000</span>), </span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>      <span class="at">xlab =</span> <span class="st">"Re(z)"</span>, <span class="at">ylab =</span> <span class="st">"Im(z)"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="Mandelbrot_Julia_Writeup_files/figure-html/Fractional%20iterations-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="smoothed-colors" class="level4">
+<h4 class="anchored" data-anchor-id="smoothed-colors">Smoothed Colors</h4>
+<p>Interpolating between colors using <span class="math inline">\(\nu\)</span> yields the following:</p>
+<div class="cell" data-hash="Mandelbrot_Julia_Writeup_cache/html/Smoothed coloring_12f50338c02174d1cb1677fee8f54abd">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">image</span>(x,y,<span class="fu">t</span>(<span class="fu">matrix</span>(mandelset<span class="sc">$</span>scolor, <span class="at">nrow =</span> <span class="dv">500</span>)), <span class="at">asp =</span> <span class="dv">1</span>, </span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>      <span class="at">col =</span> <span class="fu">colorRampPalette</span>(<span class="fu">c</span>(<span class="st">"white"</span>, <span class="st">"black"</span>))(<span class="dv">10000</span>), </span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>      <span class="at">xlab =</span> <span class="st">"Re(z)"</span>, <span class="at">ylab =</span> <span class="st">"Im(z)"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="Mandelbrot_Julia_Writeup_files/figure-html/Smoothed%20coloring-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+</section>
+</section>
+<section id="creating-a-function" class="level2">
+<h2 class="anchored" data-anchor-id="creating-a-function">Creating a Function</h2>
+<p>To simplify the process, all these steps can be combined into a single <code>vector_mandelbrot</code> function where:</p>
+<ol type="1">
+<li>Using input parameters, setup rendering
+<ol type="i">
+<li><code>xmin</code>, <code>xmax</code>, <code>ymin</code>, <code>ymax</code> to set extents of rendering</li>
+<li><code>xpixel</code>, and <code>ypixel</code> to determine number of pixels per dimension</li>
+<li><code>max_iterations</code> to set maximum number of iterations to determine set membership</li>
+<li><code>showimage</code> to determine whether data or a plot is returned</li>
+<li><code>plt_color</code> to select a coloration for the plot, allowed names from <code>brewer.pal.info</code></li>
+</ol></li>
+<li>Calculates <code>zn</code> (final z-values) and <code>k</code> (escape iteration) matrices</li>
+<li>Do histogram binning and color smoothing, combining results to single long format data.frame.</li>
+<li>Plot results</li>
+</ol>
+<div class="cell" data-hash="Mandelbrot_Julia_Writeup_cache/html/unnamed-chunk-2_4bb5c2cb2e158a00f928a2610ec58d38">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>vector_mandelbrot <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">xmin =</span> <span class="sc">-</span><span class="dv">2</span>, <span class="at">xmax =</span> .<span class="dv">5</span>, <span class="at">xpixel =</span> <span class="dv">500</span>, </span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>                              <span class="at">ymax =</span> <span class="fl">1.2</span>, <span class="at">ymin =</span> <span class="sc">-</span><span class="fl">1.2</span>, <span class="at">ypixel =</span> <span class="dv">500</span>, </span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>                              <span class="at">max_iterations =</span> <span class="dv">500</span>, </span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>                              <span class="at">showimage =</span> <span class="cn">TRUE</span>, <span class="at">plt_color =</span> <span class="st">"RdBu"</span>) {</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  x <span class="ot">&lt;-</span> <span class="fu">seq</span>(xmin, xmax, <span class="at">length.out =</span> xpixel)</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  y <span class="ot">&lt;-</span> <span class="fu">seq</span>(ymin, ymax, <span class="at">length.out =</span> ypixel)</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Produces matrix of complex numbers, note that 'x' changes across the columns and 'y' changes down the rows. </span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  <span class="co"># C is the value added in each iteration of Mandelbrot set</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>  c <span class="ot">&lt;-</span> <span class="fu">outer</span>(x, y <span class="sc">*</span> 1i, <span class="at">FUN =</span> <span class="st">"+"</span>)</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Initialize empty matrix to hold calculated z's</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>  z <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="dv">0</span>, <span class="at">nrow =</span> xpixel, <span class="at">ncol =</span> ypixel)</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Initialize empty matrix to hold iteration counts</span></span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>  k <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="dv">0</span>, <span class="at">nrow =</span> xpixel, <span class="at">ncol =</span> ypixel)</span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Calculate the complex numbers up till escape and escape iteration. </span></span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (j <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>max_iterations) {</span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Note escape value of 1000. If this is changed, make sure to alter in calculation of nu below. </span></span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>    index <span class="ot">&lt;-</span> <span class="fu">which</span>(<span class="fu">abs</span>(z) <span class="sc">&lt;</span> <span class="dv">1000</span>)</span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>    z[index] <span class="ot">&lt;-</span> z[index]<span class="sc">^</span><span class="dv">2</span> <span class="sc">+</span> c[index]</span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a>    k[index] <span class="ot">&lt;-</span> k[index] <span class="sc">+</span> <span class="dv">1</span></span>
+<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Note that the use of outer expands the first variable x along the column and y along the row. </span></span>
+<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Convert escape iterations and complex numbers to long dataframe to aid in coloring. </span></span>
+<span id="cb10-27"><a href="#cb10-27" aria-hidden="true" tabindex="-1"></a>  mandelset <span class="ot">&lt;-</span> <span class="fu">matrix_to_long</span>(k, x, y, max_iterations)</span>
+<span id="cb10-28"><a href="#cb10-28" aria-hidden="true" tabindex="-1"></a>  z <span class="ot">&lt;-</span> <span class="fu">matrix_to_long</span>(z, x, y, max_iterations) <span class="sc">%&gt;%</span></span>
+<span id="cb10-29"><a href="#cb10-29" aria-hidden="true" tabindex="-1"></a>    <span class="fu">rename</span>(<span class="st">"zn"</span> <span class="ot">=</span> <span class="st">"value"</span>)</span>
+<span id="cb10-30"><a href="#cb10-30" aria-hidden="true" tabindex="-1"></a>  mandelset <span class="ot">&lt;-</span> <span class="fu">left_join</span>(mandelset, z, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"x"</span>, <span class="st">"y"</span>))</span>
+<span id="cb10-31"><a href="#cb10-31" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb10-32"><a href="#cb10-32" aria-hidden="true" tabindex="-1"></a>  colors <span class="ot">&lt;-</span> mandelset <span class="sc">%&gt;%</span></span>
+<span id="cb10-33"><a href="#cb10-33" aria-hidden="true" tabindex="-1"></a>    <span class="fu">group_by</span>(value) <span class="sc">%&gt;%</span></span>
+<span id="cb10-34"><a href="#cb10-34" aria-hidden="true" tabindex="-1"></a>    <span class="fu">summarize</span>(<span class="at">n =</span> <span class="fu">n</span>()) <span class="sc">%&gt;%</span></span>
+<span id="cb10-35"><a href="#cb10-35" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">color =</span> n<span class="sc">/</span><span class="fu">sum</span>(n)) <span class="sc">%&gt;%</span></span>
+<span id="cb10-36"><a href="#cb10-36" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">color =</span> <span class="fu">cumsum</span>(color)) <span class="sc">%&gt;%</span></span>
+<span id="cb10-37"><a href="#cb10-37" aria-hidden="true" tabindex="-1"></a>    <span class="fu">select</span>(<span class="sc">-</span>n) <span class="sc">%&gt;%</span></span>
+<span id="cb10-38"><a href="#cb10-38" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">color2 =</span> <span class="fu">lag</span>(color, <span class="at">default =</span> <span class="dv">0</span>))</span>
+<span id="cb10-39"><a href="#cb10-39" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb10-40"><a href="#cb10-40" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Combine the mandelset and colors</span></span>
+<span id="cb10-41"><a href="#cb10-41" aria-hidden="true" tabindex="-1"></a>  mandelset <span class="ot">&lt;-</span> <span class="fu">left_join</span>(mandelset, colors, <span class="at">by =</span> <span class="st">"value"</span>)</span>
+<span id="cb10-42"><a href="#cb10-42" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb10-43"><a href="#cb10-43" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Add fractional iteration counts</span></span>
+<span id="cb10-44"><a href="#cb10-44" aria-hidden="true" tabindex="-1"></a>  <span class="co"># nu has problem that if abs(zn) crosses cutoff on max iteration, the point</span></span>
+<span id="cb10-45"><a href="#cb10-45" aria-hidden="true" tabindex="-1"></a>  <span class="co"># will have k = maxiteration but will give result from log0. To overcome, </span></span>
+<span id="cb10-46"><a href="#cb10-46" aria-hidden="true" tabindex="-1"></a>  <span class="co"># include ifelse to test if zn was produced at max iteration and exclude. </span></span>
+<span id="cb10-47"><a href="#cb10-47" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Otherwise, messes up color distribution with outliers. </span></span>
+<span id="cb10-48"><a href="#cb10-48" aria-hidden="true" tabindex="-1"></a>  mandelset <span class="ot">&lt;-</span> mandelset <span class="sc">%&gt;%</span></span>
+<span id="cb10-49"><a href="#cb10-49" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">nu =</span> <span class="fu">ifelse</span>(value <span class="sc">==</span> <span class="dv">0</span>, <span class="dv">0</span>, <span class="fu">log0</span>(<span class="fu">log0</span>(<span class="fu">abs</span>(zn))<span class="sc">/</span><span class="fu">log</span>(<span class="dv">1000</span>))<span class="sc">/</span><span class="fu">log</span>(<span class="dv">2</span>)))</span>
+<span id="cb10-50"><a href="#cb10-50" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb10-51"><a href="#cb10-51" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Interpolate between colors</span></span>
+<span id="cb10-52"><a href="#cb10-52" aria-hidden="true" tabindex="-1"></a>  mandelset <span class="ot">&lt;-</span> mandelset <span class="sc">%&gt;%</span> </span>
+<span id="cb10-53"><a href="#cb10-53" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">scolor =</span> color <span class="sc">+</span> (color2 <span class="sc">-</span> color)<span class="sc">*</span>nu)</span>
+<span id="cb10-54"><a href="#cb10-54" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb10-55"><a href="#cb10-55" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span>(showimage) {</span>
+<span id="cb10-56"><a href="#cb10-56" aria-hidden="true" tabindex="-1"></a>    cn <span class="ot">&lt;-</span> brewer.pal.info[plt_color,]<span class="sc">$</span>maxcolors</span>
+<span id="cb10-57"><a href="#cb10-57" aria-hidden="true" tabindex="-1"></a>    <span class="fu">image</span>(x,y,<span class="fu">t</span>(<span class="fu">matrix</span>(mandelset<span class="sc">$</span>scolor, <span class="at">nrow =</span> ypixel)), <span class="at">asp =</span> <span class="dv">1</span>, </span>
+<span id="cb10-58"><a href="#cb10-58" aria-hidden="true" tabindex="-1"></a>          <span class="at">col =</span> <span class="fu">colorRampPalette</span>(<span class="fu">c</span>(<span class="st">"black"</span>, </span>
+<span id="cb10-59"><a href="#cb10-59" aria-hidden="true" tabindex="-1"></a>                                   <span class="fu">brewer.pal</span>(cn, plt_color)))(<span class="dv">256</span>), </span>
+<span id="cb10-60"><a href="#cb10-60" aria-hidden="true" tabindex="-1"></a>          <span class="at">xlab =</span> <span class="st">"Re(z)"</span>, <span class="at">ylab =</span> <span class="st">"Im(z)"</span>)</span>
+<span id="cb10-61"><a href="#cb10-61" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
+<span id="cb10-62"><a href="#cb10-62" aria-hidden="true" tabindex="-1"></a>    mandelset</span>
+<span id="cb10-63"><a href="#cb10-63" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb10-64"><a href="#cb10-64" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<section id="results" class="level3">
+<h3 class="anchored" data-anchor-id="results">Results</h3>
+<div class="cell" data-hash="Mandelbrot_Julia_Writeup_cache/html/unnamed-chunk-3_576eb27308550ea62b56ed5e5238c2eb">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">vector_mandelbrot</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="Mandelbrot_Julia_Writeup_files/figure-html/unnamed-chunk-3-1.png" class="img-fluid" width="672"></p>
+</div>
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">vector_mandelbrot</span>(<span class="at">xmin =</span> <span class="sc">-</span><span class="dv">1</span>, <span class="at">xmax =</span> <span class="sc">-</span>.<span class="dv">5</span>, <span class="at">ymin =</span> <span class="dv">0</span>, <span class="at">ymax =</span> .<span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="Mandelbrot_Julia_Writeup_files/figure-html/unnamed-chunk-3-2.png" class="img-fluid" width="672"></p>
+</div>
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">vector_mandelbrot</span>(<span class="at">xmin =</span> <span class="sc">-</span><span class="fl">1.8</span>, <span class="at">xmax =</span>  <span class="sc">-</span><span class="fl">1.7</span>, <span class="at">ymin =</span> <span class="sc">-</span>.<span class="dv">05</span>, <span class="at">ymax =</span> .<span class="dv">05</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="Mandelbrot_Julia_Writeup_files/figure-html/unnamed-chunk-3-3.png" class="img-fluid" width="672"></p>
+</div>
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">vector_mandelbrot</span>(<span class="at">xmin =</span> <span class="sc">-</span>.<span class="dv">58</span>, <span class="at">xmax =</span>  <span class="sc">-</span>.<span class="dv">54</span>, <span class="at">ymin =</span> .<span class="dv">62</span>, <span class="at">ymax =</span> .<span class="dv">66</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="Mandelbrot_Julia_Writeup_files/figure-html/unnamed-chunk-3-4.png" class="img-fluid" width="672"></p>
+</div>
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">vector_mandelbrot</span>(<span class="at">xmin =</span> <span class="sc">-</span><span class="fl">0.6585</span>, <span class="at">xmax =</span> <span class="sc">-</span><span class="fl">0.6518</span>, <span class="at">ymin =</span> <span class="sc">-</span><span class="fl">0.3816</span>, <span class="at">ymax =</span> <span class="sc">-</span><span class="fl">0.3745</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="Mandelbrot_Julia_Writeup_files/figure-html/unnamed-chunk-3-5.png" class="img-fluid" width="672"></p>
+</div>
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">vector_mandelbrot</span>(<span class="at">xmin =</span> <span class="sc">-</span>.<span class="dv">6531</span>, <span class="at">xmax =</span> <span class="sc">-</span>.<span class="dv">6514</span>, <span class="at">ymin =</span> <span class="sc">-</span>.<span class="dv">3774</span>, <span class="at">ymax =</span> <span class="sc">-</span>.<span class="dv">3759</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="Mandelbrot_Julia_Writeup_files/figure-html/unnamed-chunk-3-6.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+</section>
+<section id="julia-set" class="level2">
+<h2 class="anchored" data-anchor-id="julia-set">Julia Set</h2>
+<p>Whereas the Mandelbrot set is defined as points <span class="math inline">\(c\)</span> in the complex plane that are bounded when <span class="math inline">\(f_c(z)=z^2+c\)</span> is iterated starting at <span class="math inline">\(z=0\)</span>, there are many different Julia sets. The quadratic Julia set is generated with the same <span class="math inline">\(f_c(z)=z^2+c\)</span> but <span class="math inline">\(c\)</span> is held fixed on the plane while the initial <span class="math inline">\(z\)</span> is in the complex plane with real component <span class="math inline">\([-2,2]\)</span> and imaginary component <span class="math inline">\([-2,2]\)</span>.<br>
+The following setup is similar to the Mandelbrot set function but changes how <code>k</code> and <code>z</code> are calculated to reflect the Julia set. One alteration for this function is to try and reduce computation time by decreasing the number of calculations. A simple place to find a speedup is <code>which(|z|) &lt; cutoff</code>; in the Mandelbrot set calculation, this was done over the entire grid each iteration of the <code>for</code> loop. Here, the indices tested in <code>which</code> are subsetted first.</p>
+<div class="cell" data-hash="Mandelbrot_Julia_Writeup_cache/html/unnamed-chunk-4_dbb268aaba375a1146a24863cecbb15a">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>c <span class="ot">&lt;-</span> <span class="sc">-</span>.<span class="dv">77146</span><span class="fl">-.10119</span>i</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="sc">-</span><span class="dv">2</span>, <span class="dv">2</span>, <span class="at">length.out =</span> <span class="dv">500</span>)</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="sc">-</span><span class="dv">2</span>, <span class="dv">2</span>, <span class="at">length.out =</span> <span class="dv">500</span>)</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>cgrid <span class="ot">&lt;-</span> <span class="fu">outer</span>(x, y <span class="sc">*</span> 1i, <span class="at">FUN =</span> <span class="st">"+"</span>)</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>k <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="dv">0</span>, <span class="at">nrow =</span> <span class="fu">length</span>(x), <span class="at">ncol =</span> <span class="fu">length</span>(y))</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Index finds which indices are still under cutoff |z| &lt; 1000</span></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a><span class="co"># To speed calculation, instead of |cgrid| on whole grid, can subset to </span></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a><span class="co"># only values that are still under the cutoff</span></span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>subindex <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(cgrid) <span class="co"># Initially all points</span></span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (j <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">1000</span>) {</span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Which |z| are under cutoff? </span></span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>  index <span class="ot">&lt;-</span> <span class="fu">which</span>(<span class="fu">abs</span>(cgrid[subindex]) <span class="sc">&lt;</span> <span class="dv">1000</span>)</span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Iterate grid, subset of points under cutoff</span></span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a>  cgrid[subindex[index]] <span class="ot">&lt;-</span> cgrid[subindex[index]]<span class="sc">^</span><span class="dv">2</span> <span class="sc">+</span> c</span>
+<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Increment iteration count, subset of points under cutoff</span></span>
+<span id="cb17-17"><a href="#cb17-17" aria-hidden="true" tabindex="-1"></a>  k[subindex[index]] <span class="ot">&lt;-</span> k[subindex[index]]<span class="sc">+</span><span class="dv">1</span></span>
+<span id="cb17-18"><a href="#cb17-18" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Select subset of overall set that are under cutoff (index)</span></span>
+<span id="cb17-19"><a href="#cb17-19" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Preserves index of original grid</span></span>
+<span id="cb17-20"><a href="#cb17-20" aria-hidden="true" tabindex="-1"></a>  subindex <span class="ot">&lt;-</span> subindex[index]</span>
+<span id="cb17-21"><a href="#cb17-21" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb17-22"><a href="#cb17-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-23"><a href="#cb17-23" aria-hidden="true" tabindex="-1"></a><span class="fu">image</span>(x, y, k, <span class="at">asp =</span> <span class="dv">1</span>, <span class="at">col =</span> <span class="fu">colorRampPalette</span>(<span class="fu">c</span>(<span class="st">"white"</span>, <span class="st">"black"</span>))(<span class="dv">500</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="Mandelbrot_Julia_Writeup_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>The initial results are visually appealing but similar to the Mandelbrot set the color scale is not optimal.</p>
+<section id="julia-histogram-binning-and-smoothing" class="level3">
+<h3 class="anchored" data-anchor-id="julia-histogram-binning-and-smoothing">Julia Histogram binning and Smoothing</h3>
+<p>For this set as well, histogram binning works well to change the color scale. To mix things up from the Mandelbrot set above, I wanted to try without the aid of dplyr. To create the color binning, the <code>table</code> function creates a summary of counts which are normalized by dividing by the number of points in the complex grid, and then passed to <code>cumsum</code> which converts to range of [0,1]. This new color range is then used to change the matrix of iteration counts <code>k</code> to a matrix of colors <code>bin_k</code>.</p>
+<div class="cell" data-hash="Mandelbrot_Julia_Writeup_cache/html/Bin Colors - Julia_0728ba03ad313ff4c500927fcfb2a0e1">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Histogram binning for colors, avoiding dplyr</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Note 500*500 are dimensions of plot</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>t1 <span class="ot">&lt;-</span> <span class="fu">cumsum</span>(<span class="fu">table</span>(k)<span class="sc">/</span>(<span class="dv">500</span><span class="sc">*</span><span class="dv">500</span>))</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>bin_k <span class="ot">&lt;-</span> k</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>bin_k[<span class="fu">which</span>(k <span class="sc">==</span> <span class="dv">1000</span>)] <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(t1)) {</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>  bin_k[bin_k <span class="sc">==</span> <span class="fu">as.numeric</span>(<span class="fu">names</span>(t1)[i])] <span class="ot">&lt;-</span> t1[i]</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a><span class="fu">image</span>(x, y, bin_k, <span class="at">asp =</span> <span class="dv">1</span>, <span class="at">col =</span> <span class="fu">colorRampPalette</span>(<span class="fu">c</span>(<span class="st">"black"</span>, <span class="st">"white"</span>))(<span class="dv">500</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="Mandelbrot_Julia_Writeup_files/figure-html/Bin%20Colors%20-%20Julia-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>Finally, as this coloring unsurprisingly has discrete bands, the colors can be smoothed. This is accomplished by:</p>
+<ol type="1">
+<li>Creating a duplicate of <code>bin_k</code> that is created by matching the iteration count to the normalized table lagged by 1</li>
+<li>Calculating the fractional iteration <span class="math inline">\(\nu\)</span> the same way as the Mandelbrot set</li>
+<li>Interpolating between the first bin of colors and lagged bin of colors as a function of <span class="math inline">\(\nu\)</span>.</li>
+</ol>
+<div class="cell" data-hash="Mandelbrot_Julia_Writeup_cache/html/Interpolate Colors - Julia_aaeeffabc9a099e53f997bc9228f9b56">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># for (i in 1:length(t1)) {</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="co">#   k[k == as.numeric(names(t1)[i])] &lt;- t1[i]</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="co"># }</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>bin_k_lag <span class="ot">&lt;-</span> k</span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(t1)) {</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>  bin_k_lag[bin_k_lag <span class="sc">==</span> <span class="fu">as.numeric</span>(<span class="fu">names</span>(t1)[i])] <span class="ot">&lt;-</span> <span class="fu">lag</span>(t1, <span class="at">default =</span> <span class="dv">0</span>)[i]</span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>nu <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(<span class="fu">abs</span>(cgrid) <span class="sc">&lt;</span> <span class="dv">1000</span>, <span class="dv">0</span>, <span class="fu">log0</span>(<span class="fu">log0</span>(<span class="fu">abs</span>(cgrid))<span class="sc">/</span><span class="fu">log</span>(<span class="dv">1000</span>))<span class="sc">/</span><span class="fu">log</span>(<span class="dv">2</span>))</span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>k_smooth <span class="ot">&lt;-</span> bin_k <span class="sc">+</span> (bin_k_lag <span class="sc">-</span> bin_k) <span class="sc">*</span> nu</span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a><span class="fu">image</span>(x, y, k_smooth, <span class="at">asp =</span> <span class="dv">1</span>, <span class="at">col =</span> <span class="fu">colorRampPalette</span>(<span class="fu">c</span>(<span class="st">"black"</span>, <span class="st">"white"</span>))(<span class="dv">500</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="Mandelbrot_Julia_Writeup_files/figure-html/Interpolate%20Colors%20-%20Julia-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+</section>
+<section id="creating-a-function-1" class="level2">
+<h2 class="anchored" data-anchor-id="creating-a-function-1">Creating a function</h2>
+<p>The above steps can be combined to a single function and passed different <span class="math inline">\(c\)</span> values.</p>
+<div class="cell" data-hash="Mandelbrot_Julia_Writeup_cache/html/Vector_Julia function_72f57241c20ee1292921a5a4f80e0348">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>vector_julia <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">xmin =</span> <span class="sc">-</span><span class="dv">2</span>, <span class="at">xmax =</span> <span class="dv">2</span>, <span class="at">ymin =</span> <span class="sc">-</span><span class="dv">2</span>, <span class="at">ymax =</span> <span class="dv">2</span>, </span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>                         <span class="at">xpixel =</span> <span class="dv">500</span>, <span class="at">ypixel =</span> <span class="dv">500</span>, </span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>                         <span class="at">c =</span> <span class="sc">-</span>.<span class="dv">77146</span><span class="fl">-.10119</span>i, <span class="at">max_iterations =</span> <span class="dv">1000</span>, </span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>                         <span class="at">showplot =</span> <span class="cn">TRUE</span>) {</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>  x <span class="ot">&lt;-</span> <span class="fu">seq</span>(xmin, xmax, <span class="at">length.out =</span> xpixel)</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>  y <span class="ot">&lt;-</span> <span class="fu">seq</span>(ymin, ymax, <span class="at">length.out =</span> ypixel)</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>  cgrid <span class="ot">&lt;-</span> <span class="fu">outer</span>(x, y <span class="sc">*</span> 1i, <span class="at">FUN =</span> <span class="st">"+"</span>)</span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>  k <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="dv">0</span>, <span class="at">nrow =</span> <span class="fu">length</span>(x), <span class="at">ncol =</span> <span class="fu">length</span>(y))</span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Index finds which indices are still under cutoff |z| &lt; 1000</span></span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>  <span class="co"># To speed calculation, instead of |cgrid| on whole grid, can subset to </span></span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a>  <span class="co"># only values that are still under the cutoff</span></span>
+<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a>  subindex <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(cgrid) <span class="co"># Initially all points</span></span>
+<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (j <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>max_iterations) {</span>
+<span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Which |z| are under cutoff? </span></span>
+<span id="cb20-16"><a href="#cb20-16" aria-hidden="true" tabindex="-1"></a>    index <span class="ot">&lt;-</span> <span class="fu">which</span>(<span class="fu">abs</span>(cgrid[subindex]) <span class="sc">&lt;</span> <span class="dv">1000</span>)</span>
+<span id="cb20-17"><a href="#cb20-17" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Iterate grid, subset of points under cutoff</span></span>
+<span id="cb20-18"><a href="#cb20-18" aria-hidden="true" tabindex="-1"></a>    cgrid[subindex[index]] <span class="ot">&lt;-</span> cgrid[subindex[index]]<span class="sc">^</span><span class="dv">2</span> <span class="sc">+</span> c</span>
+<span id="cb20-19"><a href="#cb20-19" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Increment iteration count, subset of points under cutoff</span></span>
+<span id="cb20-20"><a href="#cb20-20" aria-hidden="true" tabindex="-1"></a>    k[subindex[index]] <span class="ot">&lt;-</span> k[subindex[index]]<span class="sc">+</span><span class="dv">1</span></span>
+<span id="cb20-21"><a href="#cb20-21" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Select subset of overall set that are under cutoff (index)</span></span>
+<span id="cb20-22"><a href="#cb20-22" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Preserves index of original grid</span></span>
+<span id="cb20-23"><a href="#cb20-23" aria-hidden="true" tabindex="-1"></a>    subindex <span class="ot">&lt;-</span> subindex[index]</span>
+<span id="cb20-24"><a href="#cb20-24" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb20-25"><a href="#cb20-25" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb20-26"><a href="#cb20-26" aria-hidden="true" tabindex="-1"></a>  t1 <span class="ot">&lt;-</span> <span class="fu">cumsum</span>(<span class="fu">table</span>(k)<span class="sc">/</span>(xpixel<span class="sc">*</span>ypixel)) </span>
+<span id="cb20-27"><a href="#cb20-27" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Makes maxiteration count 0 instead of 1000</span></span>
+<span id="cb20-28"><a href="#cb20-28" aria-hidden="true" tabindex="-1"></a>  <span class="co"># k[which(k == 1000)] &lt;- 0</span></span>
+<span id="cb20-29"><a href="#cb20-29" aria-hidden="true" tabindex="-1"></a>  bin_k <span class="ot">&lt;-</span> k</span>
+<span id="cb20-30"><a href="#cb20-30" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(t1)) {</span>
+<span id="cb20-31"><a href="#cb20-31" aria-hidden="true" tabindex="-1"></a>    bin_k[bin_k <span class="sc">==</span> <span class="fu">as.numeric</span>(<span class="fu">names</span>(t1)[i])] <span class="ot">&lt;-</span> t1[i]</span>
+<span id="cb20-32"><a href="#cb20-32" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb20-33"><a href="#cb20-33" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb20-34"><a href="#cb20-34" aria-hidden="true" tabindex="-1"></a>  bin_k_lag <span class="ot">&lt;-</span> k</span>
+<span id="cb20-35"><a href="#cb20-35" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb20-36"><a href="#cb20-36" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(t1)) {</span>
+<span id="cb20-37"><a href="#cb20-37" aria-hidden="true" tabindex="-1"></a>    bin_k_lag[bin_k_lag <span class="sc">==</span> <span class="fu">as.numeric</span>(<span class="fu">names</span>(t1)[i])] <span class="ot">&lt;-</span> <span class="fu">lag</span>(t1, <span class="at">default =</span> <span class="dv">0</span>)[i]</span>
+<span id="cb20-38"><a href="#cb20-38" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb20-39"><a href="#cb20-39" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb20-40"><a href="#cb20-40" aria-hidden="true" tabindex="-1"></a>  nu <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(<span class="fu">abs</span>(cgrid) <span class="sc">&lt;</span> <span class="dv">1000</span>, <span class="dv">0</span>, <span class="fu">log0</span>(<span class="fu">log0</span>(<span class="fu">abs</span>(cgrid))<span class="sc">/</span><span class="fu">log</span>(<span class="dv">1000</span>))<span class="sc">/</span><span class="fu">log</span>(<span class="dv">2</span>))</span>
+<span id="cb20-41"><a href="#cb20-41" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb20-42"><a href="#cb20-42" aria-hidden="true" tabindex="-1"></a>  k_smooth <span class="ot">&lt;-</span> bin_k <span class="sc">+</span> (bin_k_lag <span class="sc">-</span> bin_k) <span class="sc">*</span> nu</span>
+<span id="cb20-43"><a href="#cb20-43" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span>(showplot) {</span>
+<span id="cb20-44"><a href="#cb20-44" aria-hidden="true" tabindex="-1"></a>  <span class="fu">image</span>(x, y, k_smooth, <span class="at">asp =</span> <span class="dv">1</span>, </span>
+<span id="cb20-45"><a href="#cb20-45" aria-hidden="true" tabindex="-1"></a>        <span class="at">col =</span> <span class="fu">colorRampPalette</span>(<span class="fu">c</span>(<span class="st">"black"</span>, <span class="st">"white"</span>))(<span class="dv">500</span>))</span>
+<span id="cb20-46"><a href="#cb20-46" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
+<span id="cb20-47"><a href="#cb20-47" aria-hidden="true" tabindex="-1"></a>    <span class="fu">list</span>(<span class="at">x=</span>x, <span class="at">y=</span>y, <span class="at">k0 =</span> k, <span class="at">k=</span>k_smooth)</span>
+<span id="cb20-48"><a href="#cb20-48" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb20-49"><a href="#cb20-49" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<div class="cell" data-hash="Mandelbrot_Julia_Writeup_cache/html/Julia plots_2614fbcf76d3703ba4a3f5c053b2dbcb">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">vector_julia</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="Mandelbrot_Julia_Writeup_files/figure-html/Julia%20plots-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="julia-gif" class="level2">
+<h2 class="anchored" data-anchor-id="julia-gif">Julia gif</h2>
+<p>Creating a gif of the Julia set involves changing the input <span class="math inline">\(c\)</span> through a range of values and combining them with <code>magick</code>. The following creates a temporary directory to store images, runs through a series of <span class="math inline">\(c\)</span> values in <code>vector_julia(c)</code> saving each as a jpg, then <code>image_read</code>s each, combines them with <code>image_join</code>, and finally creates a gif with <code>image_animate</code> before removing the temporary directory.</p>
+<div class="cell" data-hash="Mandelbrot_Julia_Writeup_cache/html/Julia gif_1d871bf697c1129b0b6c0f1df6b24756">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(magick)</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Make temp directory to store image files</span></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>dir_out <span class="ot">&lt;-</span> <span class="fu">file.path</span>(<span class="fu">tempdir</span>(), <span class="st">"julia_img"</span>)</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a><span class="fu">dir.create</span>(dir_out, <span class="at">recursive =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>dim <span class="ot">&lt;-</span> <span class="dv">1000</span></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>cs <span class="ot">&lt;-</span> <span class="sc">-</span>.<span class="dv">77146</span> <span class="sc">+</span> <span class="fu">seq</span>(<span class="sc">-</span><span class="dv">1</span>, <span class="dv">1</span>, <span class="at">length.out =</span> <span class="dv">30</span>)<span class="sc">*</span>1i <span class="co">#c's to use</span></span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(cs)){</span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Open's png device to save</span></span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">png</span>(<span class="fu">file.path</span>(dir_out, <span class="fu">paste0</span>(<span class="fu">sprintf</span>(<span class="st">"%04d"</span>, i), <span class="st">".png"</span>)), </span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>      <span class="at">width =</span> dim, <span class="at">height =</span> dim)</span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Can change xpixel, ypixel for higher resolution gif</span></span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">vector_julia</span>(<span class="at">c =</span> cs[i], <span class="at">xpixel =</span> dim, <span class="at">ypixel =</span> dim)</span>
+<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Close png</span></span>
+<span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">dev.off</span>()</span>
+<span id="cb22-16"><a href="#cb22-16" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb22-17"><a href="#cb22-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-18"><a href="#cb22-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Read created image file names</span></span>
+<span id="cb22-19"><a href="#cb22-19" aria-hidden="true" tabindex="-1"></a>imgs <span class="ot">&lt;-</span> <span class="fu">list.files</span>(dir_out, <span class="at">full.names =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb22-20"><a href="#cb22-20" aria-hidden="true" tabindex="-1"></a><span class="co"># Read images into list</span></span>
+<span id="cb22-21"><a href="#cb22-21" aria-hidden="true" tabindex="-1"></a>img_list <span class="ot">&lt;-</span> <span class="fu">lapply</span>(imgs, image_read)</span>
+<span id="cb22-22"><a href="#cb22-22" aria-hidden="true" tabindex="-1"></a><span class="co"># Combine list</span></span>
+<span id="cb22-23"><a href="#cb22-23" aria-hidden="true" tabindex="-1"></a>img_joined <span class="ot">&lt;-</span> <span class="fu">image_join</span>(img_list)</span>
+<span id="cb22-24"><a href="#cb22-24" aria-hidden="true" tabindex="-1"></a><span class="co"># animate joined images</span></span>
+<span id="cb22-25"><a href="#cb22-25" aria-hidden="true" tabindex="-1"></a>img_animated <span class="ot">&lt;-</span> <span class="fu">image_animate</span>(img_joined, <span class="at">fps =</span> <span class="dv">10</span>)</span>
+<span id="cb22-26"><a href="#cb22-26" aria-hidden="true" tabindex="-1"></a><span class="co"># Save gif</span></span>
+<span id="cb22-27"><a href="#cb22-27" aria-hidden="true" tabindex="-1"></a><span class="fu">image_write</span>(<span class="at">image =</span> img_animated,</span>
+<span id="cb22-28"><a href="#cb22-28" aria-hidden="true" tabindex="-1"></a>            <span class="at">path =</span> <span class="st">"julia2.gif"</span>)</span>
+<span id="cb22-29"><a href="#cb22-29" aria-hidden="true" tabindex="-1"></a><span class="fu">unlink</span>(dir_out, <span class="at">recursive =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb22-30"><a href="#cb22-30" aria-hidden="true" tabindex="-1"></a><span class="co"># Test if temp directory was removed</span></span>
+<span id="cb22-31"><a href="#cb22-31" aria-hidden="true" tabindex="-1"></a><span class="co"># dir.exists(dir_out)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="julia3.gif" class="img-fluid figure-img"></p>
+<figcaption class="figure-caption">Julia Gif</figcaption>
+</figure>
+</div>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>
