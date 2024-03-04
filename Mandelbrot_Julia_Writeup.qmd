@@ -12,21 +12,24 @@ execute:
 
 The Mandelbrot set was a first effort of mine to coax out of R methods outside of my primary use of the language - statistic and data processing. The Mandelbrot set, as described on [Wikipedia](https://en.wikipedia.org/wiki/Mandelbrot_set) is "defined in the complex plane as the complex numbers $c$ for which the function $f_c(z)=z^2+c$ does not diverge to infinity when iterated starting at $z=0$." When the real and imaginary parts of $c$ are used as image coordinates, each pixel corresponds to membership or departure from the set. To get the beautiful coloration that is emblematic to visualizations of the set, points that escape from the set are colored according to how soon the sequence diverges.
 
-## Create Mandelbrot set in R  
-### Initial Function Setup  
-A naive implementation in R is to create a grid of points and, using for loops, iterate the function $f_c(z)$ over each point up to a max number of iterations to establish escape count or membership. In R, uising for loops proves to be slow and a massive speedup can be achieved using R's vectorized nature as described [here](https://www.r-bloggers.com/2014/12/the-mandelbrot-set-in-r/).\
-The main idea is that instead of a for loop being passed each individual complex number, the entire grid can be operated on simultaneously. To accomplish this, I created a function called `vector_mandelbrot` that takes several parameters to setup the calculation. 
+## Create Mandelbrot set in R
+
+### Initial Function Setup
+
+A naive implementation in R is to create a grid of points and, using for loops, iterate the function $f_c(z)$ over each point up to a max number of iterations to establish escape count or membership. In R, using for loops proves to be slow and a massive speedup can be achieved using R's vectorized nature as described [here](https://www.r-bloggers.com/2014/12/the-mandelbrot-set-in-r/).\
+The main idea is that instead of a for loop being passed each individual complex number, the entire grid can be operated on simultaneously. To accomplish this, I created a function called `vector_mandelbrot` that takes several parameters to setup the calculation.
 
 1.  Creates a grid along `x` from `(xmin, xmax)` and `y` from `(ymin, ymax)`of length `xpixel` and `ypixel` respectively.
 2.  The `x` and `y` values are then passed to `outer(x, y*1i, FUN = "+")` to create a grid in the complex plane as `x+yi`
 3.  Creates matrix `z` and `k` to contain values of `f_c(z)` and iteration counts
 4.  Calculates complex numbers in `for(i in 1:max_iteration)` by:
     i.  Finding `index` where `abs(z)<threshold` to see whether a point has escaped
-    ii. For points that haven't escaped, find `z[index] = z[index]^2 + c[index]`
-    iii. For points that haven't escaped, increment count `k[index] = k[index]+1`  
-5. Returns the iteration count matrix `k`. 
+    ii. For points that haven't escaped, apply the quadratic function $f_c(z) = z^2 + c$ as `z[index] = z[index]^2 + c[index]`
+    iii. For points that haven't escaped, increment count matrix `k[index] = k[index]+1`\
+5.  Returns the iteration count matrix `k`.
 
 ```{r Mandelbrot Membership Function}
+#| code-summary: "Code: Initial Mandelbrot membership function"
 library(tidyverse)
 library(RColorBrewer)
 vector_mandelbrot_0 <- function(xmin = -2, xmax = .5, xpixel = 500, ymax = 1.2, ymin = -1.2, ypixel = 500, max_iterations = 500, showimage = TRUE, plt_color = "RdBu") {
@@ -54,21 +57,25 @@ vector_mandelbrot_0 <- function(xmin = -2, xmax = .5, xpixel = 500, ymax = 1.2, 
 }
 ```
 
-### Visualize Basic Membership  
-The above function can be run with the defaults and the result can be passed to the `image` function for a simple visualization. To see membership, pixels that have a max value are considered part of the set (colored black) and all other pixels as not in the set (colored white). 
+### Visualize Basic Membership
+
+The above function can be run with the defaults and the result can be passed to the `image` function for a simple visualization. To see membership, pixels that have a max value are considered part of the set (colored black) and all other pixels as not in the set (colored white).
 
 ```{r Basic visual}
 #| cache: true
+#| code-summary: "Code: Basic membership visual"
 results <- vector_mandelbrot_0()
 k <- results$k
 image(ifelse(k == 500, 0,1), asp = 1, col = c("black", "white"))
 ```
 
-### Enhance coloring  
-TO get the stunning multi-colored images of the Mandelbrot set, an additional piece of information can be considered - included in `k` is how quickly a point escapes from the Mandelbrot set. This can be used to add color to points that were formerly colored `white`.  
-The challenge inherent in coloring this set is that the distribution of points is very asymetric; there are many points that are in the set, and many points that diverge quickly with only a few at other values. A basic histogram illustrates this point:  
+### Enhance coloring
+
+To get a stunning multi-colored image of the Mandelbrot set, an additional piece of information can be considered - included in `k` is how quickly a point escapes from the Mandelbrot set. This can be used to add color to points that were formerly colored `white`.\
+The challenge inherent in coloring this set is that the distribution of points is quite skewed; there are many points that are in the set, and many points that diverge quickly with only a few at other values. A basic histogram illustrates this point:
 
 ```{r escape histogram}
+#| code-summary: "Code: Initial escape count histogram"
 # Helper function to convert output matrix to long-format
 matrix_to_long <- function(m, x, y, max_iterations) {
   m %>% data.frame() %>% 
@@ -92,9 +99,12 @@ ggplot(k_long, aes(x = value)) +
   geom_histogram()
 ```
 
-Using this distribution to color the set is underwhelming:  
+This distribution shows that the vast majority of points either converge (set to value of 0), or diverge in fewer than 25 iterations. Escape iterations of 50-100 are visible but small while higher iteration counts are so few they aren't visible on the histogram except as an extended scale. As a matter of fact, only `r sum(k_long$value > 100)` out of `r nrow(k_long)` escape values are over 100.
+
+Using this distribution to color the set is underwhelming:
 
 ```{r Initial visual bins}
+#| code-summary: "Code: Initial visualization using all iteration counts"
 # Note that the use of outer expands the first variable x along the column and y along the row. 
 # Convert escape iterations and complex numbers to long dataframe to aid in coloring. 
 mandelset <- matrix_to_long(k, x, y, 500)
@@ -106,20 +116,20 @@ image(x,y,t(matrix(mandelset$value, nrow = 500)), asp = 1,
       col = colorRampPalette(c("white", "black"))(500))
 ```
 
-
 A method to smooth this distribution is called "Histogram Binning" and was found on [Wikipedia - Plotting algorithms for the Mandelbrot set](https://en.wikipedia.org/wiki/Plotting_algorithms_for_the_Mandelbrot_set)
 
-The idea behind this method is that the above histogram can be altered by changing the scale to [0, 1] instead of [0, maxiteration] and evenly distributes colors to the same proportional area. The method is implemented on long-format escape counts `k`:  
+The idea behind this method is that the above histogram can be altered by changing the scale to \[0, 1\] instead of \[0, maxiteration\] and evenly distributes colors to the same proportional area. The method is implemented on long-format escape counts `k`:
 
-1. Group together all similar escape values `group_by(value)`
-2. Find total number of each escape value `summarize(n = n())`
-3. Create new color variable as proportion of each bin to total number of counts `mutate(color = n/sum(n))`
-4. Change the color variable to be the cumulative sum `mutate(color = cumsum(color))`
+1.  Group together escape values by value with `group_by(value)`
+2.  Find total number of each escape value `summarize(n = n())`
+3.  Create new color variable as proportion of each bin to total number of counts `mutate(color = n/sum(n))`
+4.  Change the color variable to be the cumulative sum `mutate(color = cumsum(color))`
 
-These new `colors` need to be mapped back to the original set of counts which can be done with a `left_join` and selecting `value`, the iteration count column, to join by. Looking at a new histogram of these values, the distribution of colors is much better.  
+These new `colors` are then used to change the original set of counts to the new `color` which is achieved with a `left_join` and and joining by `value`, the iteration count column. Looking at a new histogram of these values, the distribution of colors is much better.
 
 ```{r Histogram binning}
 #| cache: true
+#| code-summary: "Code: Histogram binning"
 # Histogram binning of colors as described at Wikipedia: https://en.wikipedia.org/wiki/Plotting_algorithms_for_the_Mandelbrot_set
 # Changes iteration at escape to [0,1] scale with a more even weighting based on number of times an escape value shows up. 
 colors <- mandelset %>%
@@ -137,30 +147,27 @@ ggplot(mandelset, aes(x = color)) +
   geom_histogram()
 ```
 
-And using this new distribution of colors to visualize the set:  
+And using this new distribution of colors to visualize the set:
 
 ```{r binned colors}
 #| cache: true
+#| code-summary: "Code: Visualize redistributed colors from binning"
 image(x,y,t(matrix(mandelset$color, nrow = 500)), asp = 1, 
-      col = colorRampPalette(c("white", "black"))(500), 
+      col = colorRampPalette(c("black", "white"))(500), 
       ylab = "Im(z)", xlab = "Re(z)")
 ```
 
-### Smoothing  
-A final piece of the rendering explored here is to smooth the color distribution. The histogram binning above leaves characteristic 'bands' of colors where the escape counts change. One final enhancement is these bands can be smoothed by interpolating between adjacent colors.  
-One method for this is found at [Renormalizing the Mandelbrot Escape](https://linas.org/art-gallery/escape/escape.html). The idea behind this method is that there is additional information that can be retrieved about how quickly a point diverges. Up to this point, the iteration count has been used which is an integer value that indicates when $|z_n|>\text{cutoff}$. Considering the function $f_c(z)=z^2+c$, point that escapes the set will have satisfy $\text{cutoff}<|z_n|<\text{cutoff}^2$. If a point is below the cutoff it will be part of the set establishing the lower bound, and if it is above the cutoff it must be bounded on the top as $z_{n+1} = z_n^2+c$. Choosing a larger cutoff value makes the effect of $c$ negligible.  
+### Smoothing
+
+A final piece of the rendering explored here is to smooth the color distribution. The histogram binning above leaves characteristic 'bands' of colors where the escape counts change. These bands can be smoothed by interpolating between adjacent colors; that is a point close the the boundary between two iteration counts can be colored according to how close it is to the boundary. \
+One method for this is found at [Renormalizing the Mandelbrot Escape](https://linas.org/art-gallery/escape/escape.html). The idea behind this method is that there is additional information that can be retrieved about how quickly a point diverges. Up to this point, the iteration count has been used which is an integer value that indicates when $|z_n|>\text{cutoff}$. Considering the function $f_c(z)=z^2+c$, point that escapes the set must satisfy $\text{cutoff} \le |z_n| < \text{cutoff}^2$. If a point is below the cutoff it will be part of the set establishing the lower bound, and if it is above the cutoff it must be bounded on top as it's previous iteration was below cutoff at $z_n$ while it's next iteration is above cutoff at $z_n^2 + c$. Choosing a larger cutoff value makes the effect of $c$ negligible.  
 Since $z_n$ is bounded, we can use it to establish a fractional iteration count using the boundary cutoff as $\nu(z_n)=\log_2(\log_{\text{cutoff}}(|z_n|))$. This relationship effectively takes $|z_n|$ and with the first logarithm, converts it to a value 1 to 2 and with the second to a value 0 to 1.  
-This fractional iteration $\nu$ can then be used to interpolate between the color assigned to a particular iteration count and the next color creating a smooth transition between bands. In R, this looks like `smooth_color = color + (next_color - color) * nu`; when `nu = 1`, `smooth_color` will be equal to `next_color`, when `nu = 0`, `smooth_color` will be equal to `color`, and otherwise it'll be a linear combination of the two.  
+This fractional iteration $\nu$ can then be used to interpolate between the color assigned to a particular iteration count and the next color creating a smooth transition between bands. In R, this looks like `smooth_color = color + (next_color - color) * nu`; when `nu = 1`, `smooth_color` will be equal to `next_color`, when `nu = 0`, `smooth_color` will be equal to `color`, and otherwise it'll be a linear combination of the two.
 
-```{r}
-# unneeded
-# mandelset <- mandelset %>%
-#   mutate(nu = ifelse(value == 0, value[which(k == 500)],
-#                      value[which(k < 500)] + 1 - 
-#                        log(log(abs(zn[which(k < 500)]))/log(1000))/log(2)))
-
-# Logarithm function that handles the cases when values less than 1 are input 
-# to the double logarithm which will happen for all points in the set. 
+```{r Smoothing}
+#| code-summary: "Code: Smoothing"
+# Logarithm function that handles the cases when values less than 1 are 
+# input to the double logarithm which will happen for all points in the set. 
 log0 <- function(x) {
   ret <- vector(mode = "numeric", length = length(x))
   ret[which(x > 1)] <- log(x[which(x > 1)])
@@ -171,44 +178,49 @@ log0 <- function(x) {
 mandelset <- mandelset %>%
   mutate(nu = ifelse(value == 0, 0, log0(log0(abs(zn))/log(1000))/log(2)))
 
-# mandelset_nu <- mandelset$value + 1 - log(log(abs(mandelset$zn))/log(1000))/log(2)
-
 # Interpolate between colors
 mandelset <- mandelset %>% 
   mutate(scolor = color + (color2 - color)*nu)
 ```
 
-#### Fractional Iterations Plot  
-The computed $\nu(z)$ can be plotted: 
+#### Fractional Iterations Plot
+
+By plotting the computed $\nu(z)$, each band of iteration counts has been converted to a gradient 0 to 1 where at the "outer" edge it is 1 and the "inner" edge is 0. This gradient can then be used to interpolate within each band: the "outer" edge will be fully the color of the band which gradually combines with the "inner" band till it is fully 1 at the next boundary. 
 
 ```{r Fractional iterations}
+#| code-summary: "Code: Visualizing nu - fractional iterations"
 image(x,y,t(matrix(mandelset$nu, nrow = 500)), asp = 1, 
       col = colorRampPalette(c("white", "black"))(10000), 
       xlab = "Re(z)", ylab = "Im(z)")
 ```
-#### Smoothed Colors  
-Interpolating between colors using $\nu$ yields the following:
+
+#### Smoothed Colors
+
+Finally, interpolating between colors using $\nu$ yields the following:
 
 ```{r Smoothed coloring}
+#| code-summary: "Code: Visualizing final smoothing"
 image(x,y,t(matrix(mandelset$scolor, nrow = 500)), asp = 1, 
       col = colorRampPalette(c("white", "black"))(10000), 
       xlab = "Re(z)", ylab = "Im(z)")
 ```
 
-## Creating a Function  
-To simplify the process, all these steps can be combined into a single `vector_mandelbrot` function where:  
+## Creating a Function
 
-1. Using input parameters, setup rendering
-    i. `xmin`, `xmax`, `ymin`, `ymax` to set extents of rendering
+To simplify the process, all these steps can be combined into a single `vector_mandelbrot` function where:
+
+1.  Using input parameters, setup rendering
+    i.  `xmin`, `xmax`, `ymin`, `ymax` to set extents of rendering
     ii. `xpixel`, and `ypixel` to determine number of pixels per dimension
     iii. `max_iterations` to set maximum number of iterations to determine set membership
     iv. `showimage` to determine whether data or a plot is returned
-    v. `plt_color` to select a coloration for the plot, allowed names from `brewer.pal.info`
-2. Calculates `zn` (final z-values) and `k` (escape iteration) matrices
-3. Do histogram binning and color smoothing, combining results to single long format data.frame. 
-4. Plot results
+    v.  `plt_color` to select a coloration for the plot, allowed names from `brewer.pal.info`
+2.  Calculates `zn` (final z-values) and `k` (escape iteration) matrices
+3.  Do histogram binning and color smoothing, combining results to single long format data.frame.
+4.  Plot results
 
 ```{r}
+#| code-summary: "Code: Final vector_mandelbrot function"
 vector_mandelbrot <- function(xmin = -2, xmax = .5, xpixel = 500, 
                               ymax = 1.2, ymin = -1.2, ypixel = 500, 
                               max_iterations = 500, 
@@ -276,7 +288,10 @@ vector_mandelbrot <- function(xmin = -2, xmax = .5, xpixel = 500,
 ```
 
 ### Results
+Using the `vector_mandelbrot` function, various extents for `x` and `y` can be input to illustrate different interesting points of the set.  
+
 ```{r}
+#| code-summary: "Code: Regions of interest in Mandelbrot set"
 vector_mandelbrot()
 vector_mandelbrot(xmin = -1, xmax = -.5, ymin = 0, ymax = .5)
 vector_mandelbrot(xmin = -1.8, xmax =  -1.7, ymin = -.05, ymax = .05)
@@ -285,11 +300,13 @@ vector_mandelbrot(xmin = -0.6585, xmax = -0.6518, ymin = -0.3816, ymax = -0.3745
 vector_mandelbrot(xmin = -.6531, xmax = -.6514, ymin = -.3774, ymax = -.3759)
 ```
 
-## Julia Set  
-Whereas the Mandelbrot set is defined as points $c$ in the complex plane that are bounded when $f_c(z)=z^2+c$ is iterated starting at $z=0$, there are many different Julia sets. The quadratic Julia set is generated with the same $f_c(z)=z^2+c$ but $c$ is held fixed on the plane while the initial $z$ is in the complex plane with real component $[-2,2]$ and imaginary component $[-2,2]$.  
-The following setup is similar to the Mandelbrot set function but changes how `k` and `z` are calculated to reflect the Julia set. One alteration for this function is to try and reduce computation time by decreasing the number of calculations. A simple place to find a speedup is `which(|z|) < cutoff`; in the Mandelbrot set calculation, this was done over the entire grid each iteration of the `for` loop. Here, the indices tested in `which` are subsetted first. 
+## Julia Set
 
-```{r}
+Whereas the Mandelbrot set is defined as points $c$ in the complex plane that are bounded when $f_c(z)=z^2+c$ is iterated starting at $z=0$, there are many different Julia sets. The quadratic Julia set is generated with the same $f_c(z)=z^2+c$ but $c$ is held fixed on the entire plane (in Mandelbrot it change at each point) while the initial $z$ is in the complex plane with real component $[-2,2]$ and imaginary component $[-2,2]$.  
+The following setup is similar to the Mandelbrot set function but changes how `k` and `z` are calculated to reflect the Julia set. One alteration for this function is to try and reduce computation time by decreasing the number of calculations. A simple place to find a speedup is `which(|z|) < cutoff`; in the Mandelbrot set calculation, this was done over the entire grid each iteration of the `for` loop. Here, the indices tested in `which` are subset first.
+
+```{r Initial Julia}
+#| code-summary: "Code: Initial Julia set"
 c <- -.77146-.10119i
 x <- seq(-2, 2, length.out = 500)
 y <- seq(-2, 2, length.out = 500)
@@ -315,13 +332,14 @@ for (j in 1:1000) {
 image(x, y, k, asp = 1, col = colorRampPalette(c("white", "black"))(500))
 ```
 
-The initial results are visually appealing but similar to the Mandelbrot set the color scale is not optimal. 
+The initial results are visually appealing but similar to the Mandelbrot set the color scale is not optimal.
 
-### Julia Histogram binning and Smoothing  
-For this set as well, histogram binning works well to change the color scale. To mix things up from the Mandelbrot set above, I wanted to try without the aid of dplyr. To create the color binning, the `table` function creates a summary of counts which are normalized by dividing by the number of points in the complex grid, and then passed to `cumsum` which converts to range of [0,1]. This new color range is then used to change the matrix of iteration counts `k` to a matrix of colors `bin_k`. 
+### Julia Histogram binning and Smoothing
 
+For this set as well, histogram binning works well to change the color scale. To mix things up from the Mandelbrot set above, I wanted to try without the aid of dplyr. To create the color binning, the `table` function creates a summary of counts which are normalized by dividing by the number of points in the complex grid, and then passed to `cumsum` which converts to range of \[0,1\]. This new color range is then used to change the matrix of iteration counts `k` to a matrix of colors `bin_k`.
 
 ```{r Bin Colors - Julia}
+#| code-summary: "Code: Julia set histogram binning"
 # Histogram binning for colors, avoiding dplyr
 # Note 500*500 are dimensions of plot
 t1 <- cumsum(table(k)/(500*500))
@@ -335,17 +353,15 @@ for (i in 1:length(t1)) {
 image(x, y, bin_k, asp = 1, col = colorRampPalette(c("black", "white"))(500))
 ```
 
-Finally, as this coloring unsurprisingly has discrete bands, the colors can be smoothed. This is accomplished by: 
+Finally, as this coloring unsurprisingly has discrete bands, the colors can be smoothed. This is accomplished by:
 
-1. Creating a duplicate of `bin_k` that is created by matching the iteration count to the normalized table lagged by 1
-2. Calculating the fractional iteration $\nu$ the same way as the Mandelbrot set
-3. Interpolating between the first bin of colors and lagged bin of colors as a function of $\nu$. 
+1.  Creating a duplicate of `bin_k` that is created by matching the iteration count to the normalized table lagged by 1
+2.  Calculating the fractional iteration $\nu$ the same way as the Mandelbrot set
+3.  Interpolating between the first bin of colors and lagged bin of colors as a function of $\nu$.
 
 ```{r Interpolate Colors - Julia}
-# for (i in 1:length(t1)) {
-#   k[k == as.numeric(names(t1)[i])] <- t1[i]
-# }
-
+#| code-summary: "Code: Julia set interpolate colors"
+#| 
 bin_k_lag <- k
 for (i in 1:length(t1)) {
   bin_k_lag[bin_k_lag == as.numeric(names(t1)[i])] <- lag(t1, default = 0)[i]
@@ -359,10 +375,12 @@ image(x, y, k_smooth, asp = 1, col = colorRampPalette(c("black", "white"))(500))
 
 ```
 
-## Creating a function  
-The above steps can be combined to a single function and passed different $c$ values. 
+## Creating a function
+
+The above steps can be combined to a single function and passed different $c$ values.
 
 ```{r Vector_Julia function}
+#| code-summary: "Code: Julia function vector_julia"
 vector_julia <- function(xmin = -2, xmax = 2, ymin = -2, ymax = 2, 
                          xpixel = 500, ypixel = 500, 
                          c = -.77146-.10119i, max_iterations = 1000, 
@@ -416,14 +434,17 @@ vector_julia <- function(xmin = -2, xmax = 2, ymin = -2, ymax = 2,
 
 ```{r Julia plots}
 #| cache: TRUE
+#| code-summary: "Code: Visualize julia set at "
 vector_julia()
 ```
 
-## Julia gif  
-Creating a gif of the Julia set involves changing the input $c$ through a range of values and combining them with `magick`. The following creates a temporary directory to store images, runs through a series of $c$ values in `vector_julia(c)` saving each as a jpg, then `image_read`s each, combines them with `image_join`, and finally creates a gif with `image_animate` before removing the temporary directory. 
+## Julia gif
+
+Creating a gif of the Julia set involves changing the input $c$ through a range of values and combining them with `magick`. The following creates a temporary directory to store images, runs through a series of $c$ values in `vector_julia(c)` saving each as a jpg, then runs `image_read` on each, combines them with `image_join`, and finally creates a gif with `image_animate` before removing the temporary directory.
 
 ```{r Julia gif}
 #| eval: FALSE
+#| code-summary: "Code: Make a gif of Julia set"
 library(magick)
 # Make temp directory to store image files
 dir_out <- file.path(tempdir(), "julia_img")
