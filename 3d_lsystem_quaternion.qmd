@@ -1,0 +1,483 @@
+---
+title: "3d Lindenmayer Systems"
+subtitle: "Using Quaternion Rotation"
+format: 
+  html: 
+    code-fold: true
+    #cache: true
+---
+
+```{r setup}
+#| echo: false
+library(rgl)
+#knitr::knit_hooks$set(webgl = hook_webgl)
+options(rgl.useNULL = FALSE) # Suppress the separate window.
+source("quaternion.R")
+```
+
+## 3D Lindenmayer Systems
+
+As described in a prior writeup titled "3D L-System Trees", I investigated how to create a Lindenmayer system in three dimensions. In that segment, rotations in three dimensions were handled by changing the set of vectors that describe orientation using rotation matrices. This worked well for that writeup but in creating them I felt that rotation matrices felt rather clunky. Researching how to do rotations in three dimensions, I came across a concept new to me - the quaternion. 
+
+Quaternions are used widely in 3d computer graphics, a new fact to me, and seemed to lend themselves perfectly to rotating in three dimensions. Quaternion rotation offers several advantages over rotation matrices: 
+
+* Fewer parameters: 4 vs 9
+* Faster multiplication
+
+Though I have not tested these claims myself with any benchmarks, it was enough motivation to rework my prior code to utilize this rotation method. 
+
+## What is a Quaternion
+I built most of my understandings of quaternions from the site [3D Game Engine Programming](https://www.3dgep.com/understanding-quaternions/#Introduction) where the topic is thoroughly examined. 
+
+### Complex Numbers  
+A distilled version is that quaternions are an extension of the complex coordinate plane. In High School Algebra II courses, students learn about complex numbers as $z=a+bi$ where $a$ and $b$ are real numbers and $i=\sqrt{-1}$. What is extraordinary about these is that you can graph complex numbers in the complex coordinate plane, analogous to the Cartesian coordinate plane where the $x$-axis is instead the real axis $Re(z)=a$ and the $y$-axis is the imaginary axis $Im(z)=b$. This allows a complex number $a+bi$ to be graphed as a point $(a,b)$. This point can then be rotated by an angle $\theta$ around the origin by multiplying $a+bi$ by $\cos{\theta}+i\cdot\sin{\theta}$. Thus, with complex numbers, rotations can be represented by products.  
+
+### Quaternions  
+A quaternion extends the complex coordinate plane to three dimensions by adding two additional imaginary components as $q=s+xi+yj+zk \quad s, x, y, z \in \mathbb{R}$. These additional imaginary components have the properties that:  
+
+$$
+i^2 = j^2 = k^2 = ijk = -1\\
+\begin{aligned}
+ij&=k   &   jk&=i   &   ki&=j\\
+ji&=-k  &   kj&=-i  &   ik&=-j
+\end{aligned}
+$$
+
+## Quaternion Operations in R
+
+While base R does not have the ability to natively use quaternions, packages such as [Onion](https://cran.r-project.org/web/packages/onion/readme/README.html) exist that do so. To help myself learn more about quaternions as well as play with features in R, I opted to create a class and methods that would allow for the operations I needed to support 3D L-systems. 
+
+### Defining Quaternion Class
+R has two class systems, S3 and S4, that can be used to create a custom class. Using a S3 class is recommended for quick prototyping and small projects and would be a good option for a quaternion class. I opted to use S4 for two reasons: to learn about the more rigorous S4 structure and to enable validation of quaternion class objects. 
+
+To create a class in S4, you use `setClass("ClassName")` with additional parameters such as `slots` to give slots to the class ($s, x, y, z$) and `prototype` to give a default ($s=0, x=1, y=1,z=0$). The next step is to create a validity check to ensure that the parameters passed to create the quaternion are all single numbers.    
+
+```{r Quaternion Class}
+setClass("Quaternion", 
+         slots = list(s = "numeric", x = "numeric", y = "numeric", z = "numeric"), 
+         prototype = list(s = 0, x = 1, y = 0, z = 0))
+
+# Check validity of a created quaternion
+setValidity("Quaternion", function(object) {
+  if(length(object@s) != 1 ||
+     length(object@x) != 1 || 
+     length(object@y) != 1 ||
+     length(object@z) != 1) {
+    "Each term of quaternion must be single numeric values"
+  } else {
+    TRUE
+  }
+})
+```
+
+Testing this out: 
+
+```{r Test Quaternion Class}
+#| error: true
+new("Quaternion", s=1, x=2, y=3, z=4)
+new("Quaternion", s=c(0,1), x=2, y=3, z=4)
+```
+
+```{r}
+setClass("Quaternion", 
+         slots = list(s = "numeric", x = "numeric", y = "numeric", z = "numeric"), 
+         prototype = list(s = 0, x = 1, y = 0, z = 0))
+
+# Check validity of a created quaternion
+setValidity("Quaternion", function(object) {
+  if(length(object@s) != 1 ||
+     length(object@x) != 1 || 
+     length(object@y) != 1 ||
+     length(object@z) != 1) {
+    "Each term of quaternion must be single numeric values"
+  } else {
+    TRUE
+  }
+})
+
+setClass("Param", 
+         slots = list(char = "character", val = "numeric"), 
+         prototype = list(char = NA_character_, val = NA_real_))
+
+nParam <- function(char, val) {
+  new("Param", char = char, val = val)
+}
+
+# Helper function to create a new quaternion
+## Superceeded by version below that accepts a vector.
+#createQuaternion <- function(s=0, x=1, y=0, z=0) {
+#  new("Quaternion", s = s, x = x, y = y, z =z)
+#}
+
+createQuaternion <- function(s = NULL, x = NULL, y = NULL, z = NULL, vec = NULL) {
+  if (!is.null(vec)) {
+    if (length(vec) != 3) {
+      stop("The input vector 'vec' must have exactly three components to create a pure quaternion.")
+    }
+    # Create a pure quaternion (s = 0)
+    new("Quaternion", s = 0, x = vec[1], y = vec[2], z = vec[3])
+  } else {
+    if (is.null(s) || is.null(x) || is.null(y) || is.null(z)) {
+      stop("All of 's', 'x', 'y', and 'z' must be specified when 'vec' is not provided.")
+    }
+    # Create a quaternion with the specified components
+    return(new("Quaternion", s = s, x = x, y = y, z = z))
+  }
+}
+
+# Method: Print
+# 'show' method exists, no need to create generic first
+setMethod("show", "Quaternion", function(object) {
+  cat(sprintf("Quaternion: [%.4f, %.4f, %.4f, %.4f]\n", object@s, object@x, object@y, object@z))
+})
+
+# Method: normalize
+# No existing method 'normalize', create generic first
+setGeneric("normQuat", function(q) standardGeneric("normQuat"))
+setMethod("normQuat", "Quaternion", function(q) {
+  magnitude <- sqrt(q@s^2 + q@x^2 + q@y^2 + q@z^2)
+  createQuaternion(q@s / magnitude, q@x / magnitude, q@y / magnitude, q@z / magnitude)
+})
+
+# Method: addition
+# Already exists, requires signature inputs e1 and e2
+setMethod("+", 
+          signature(e1 = "Quaternion", e2 = "Quaternion"), 
+          function(e1, e2) createQuaternion(e1@s + e2@s, 
+                                            e1@x + e2@x, 
+                                            e1@y + e2@y, 
+                                            e1@z + e2@z))
+# Method: multiplication
+# Already exists, requires signature inputs e1 and e2
+setMethod("*", 
+          signature(e1 = "Quaternion", e2 = "Quaternion"), 
+          function(e1, e2) createQuaternion(e1@s*e2@s - e1@x*e2@x - e1@y*e2@y - e1@z*e2@z, 
+                                            e1@s*e2@x + e2@s*e1@x + e1@y*e2@z - e2@y*e1@z, 
+                                            e1@s*e2@y + e2@s*e1@y + e1@z*e2@x - e2@z*e1@x, 
+                                            e1@s*e2@z + e2@s*e1@z + e1@x*e2@y - e2@x*e1@y))
+
+# Method: dot product
+# Already exists, requires signature input
+setMethod("%*%", 
+          signature(x = "Quaternion", y = "Quaternion"),
+          function(x, y) x@s*y@s + x@x*y@x + x@y*y@y + x@z*y@z)
+
+## Method: create normalized rotation quaternion
+setGeneric("NormRtnQuat", function(axis, angle) standardGeneric("NormRtnQuat"))
+setMethod("NormRtnQuat", 
+          signature(axis = "numeric", angle = "numeric"), 
+          function(axis, angle) {
+            q1 <- createQuaternion(cos(angle/2), 
+                                   axis[1]*sin(angle/2), 
+                                   axis[2]*sin(angle/2), 
+                                   axis[3]*sin(angle/2))
+            normQuat(q1)
+          })
+
+# Method: Rotate a vector by quaternion. Input quaternion should be a normalized
+# rotation quaternion created by NormRtnQuat. 
+setGeneric("RotVecByQuat", function(vec, q) standardGeneric("RotVecByQuat"))
+setMethod("RotVecByQuat", 
+          signature(vec = "numeric", q = "Quaternion"), 
+          function(vec, q) {
+            qConj <- createQuaternion(q@s, -q@x, -q@y, -q@z)
+            vecQuat <- createQuaternion(0, vec[1], vec[2], vec[3])
+            
+            # Rotate
+            rotated <- q*vecQuat*qConj
+            c(rotated@x, rotated@y, rotated@z)
+          })
+
+# Method: Rotate vector around axis by angle. 
+setGeneric("RotVecAxisAngle", 
+           function(vec, axis, angle) standardGeneric("RotVecAxisAngle"))
+setMethod("RotVecAxisAngle", 
+          signature(vec = "numeric", axis = "numeric", angle = "numeric"), 
+          function(vec, axis, angle) {
+            q <- NormRtnQuat(axis, angle)
+            qConj <- createQuaternion(q@s, -q@x, -q@y, -q@z)
+            vecQuat <- createQuaternion(0, vec[1], vec[2], vec[3])
+            
+            # Rotate
+            rotated <- (q*vecQuat)*qConj
+            c(rotated@x, rotated@y, rotated@z)
+          })
+RotVecAxisAngle(c(1,0,0), c(0,1,0), pi/2)
+
+setGeneric("ConjQuat", function(q) standardGeneric("ConjQuat"))
+setMethod("ConjQuat", 
+          signature(q = "Quaternion"), 
+          function(q) {
+            createQuaternion(q@s, -q@x, -q@y, -q@z)
+          })
+
+```
+
+
+Testing using a `Param` class
+```{r Param class}
+setClass(
+  "Param",
+  slots = list(
+    char = "character",
+    val = "numeric"
+  ),
+  prototype = list(
+    char = NA_character_,
+    val = NA_real_
+  )
+)
+
+nParam <- function(char, val) {
+  new("Param", char = char, val = val)
+}
+setMethod("show", "Quaternion", function(object) {
+  cat(sprintf("Quaternion: [%.4f, %.4f, %.4f, %.4f]\n", object@s, object@x, object@y, object@z))
+})
+setMethod("show", "Param", function(object) {
+  cat(sprintf("%s(%.4f)\n", object@char,object@val))
+})
+
+generate_lsystem <- function(axiom, rules, iterations) {
+  result <- axiom
+  
+  for (i in 1:iterations) {
+    new_result <- list()
+    for (cmd in result) {
+      if (is(cmd, "Param")) {
+        key <- cmd@char
+        if (key %in% names(rules)) {
+          new_cmds <- rules[[key]](cmd)
+          new_result <- c(new_result, new_cmds)
+        } else {
+          new_result <- c(new_result, cmd)
+        }
+      } else if (cmd %in% names(rules)) {
+        new_cmds <- rules[[cmd]]
+        new_result <- c(new_result, new_cmds)
+      } else {
+        new_result <- c(new_result, cmd)
+      }
+    }
+    result <- new_result
+  }
+  
+  result
+}
+
+
+## This code provided by ChatGPT may not work as desired. I need to make sure that appropriate HLU vectors are maintained throughout. 
+render_lsystem <- function(lsystem_result) {
+  library(rgl)
+  vT <- c(0,0,-1)
+  e <- .22
+  norm_vec <- function(x) sqrt(sum(x^2))
+  # Establish turtle initial state: heading along z, left on x, up on y
+  pos <- c(0, 0, 0)
+  vH <- c(0, 0, 1) # Initial heading (unit vector along z-axis)
+  vL <- c(1, 0, 0) # Initial left (unit vector along x-axis)
+  vU <- c(0, 1, 0) # Initial up (unit vector along y-axis)
+
+  stack <- list()   # Stack for saving and restoring state
+  segments <- list() # Store segments to draw
+  
+  for (cmd in lsystem_result) {
+    # Handles drawing forward
+    if (is(cmd, "Param") && cmd@char == "F") {
+      len <- cmd@val
+      R_magnitude <- norm_vec(pracma::cross(vH,vT)) # check if T and H in same direction
+      if (R_magnitude > 0) { # If not in same, apply tropism
+        vR <- pracma::cross(vH, vT)/R_magnitude
+        Tang <- e*norm_vec(pracma::cross(vH, vT))
+        vH <- RotVecAxisAngle(vH, vR, Tang)
+        vL <- RotVecAxisAngle(vL, vR, Tang)
+        vU <- RotVecAxisAngle(vU, vR, Tang)}
+      
+      new_pos <- pos + vH * len 
+      segments <- append(segments, list(list(start = pos, end = new_pos)))
+      pos <- new_pos
+      
+    } else if (is(cmd, "Param") && cmd@char == "/") {
+      # Rotate direction around the heading vector
+      vL <- RotVecAxisAngle(vL, vH, cmd@val*pi/180)
+      vU <- RotVecAxisAngle(vU, vH, cmd@val*pi/180)
+      
+    } else if (is(cmd, "Param") && cmd@char == "&") {
+      # Rotate direction around the left vector
+      vH <- RotVecAxisAngle(vH, vL, cmd@val*pi/180)
+      vU <- RotVecAxisAngle(vU, vL, cmd@val*pi/180)
+      
+    } else if (is(cmd, "Param") && cmd@char == "!") {
+      # change line width
+      
+    } else if (cmd == "[") {
+      # Save current state
+      stack <- append(stack, list(list(pos = pos, vH = vH, vL = vL, vU = vU)))
+      
+    } else if (cmd == "]") {
+      # Restore state
+      state <- stack[[length(stack)]]
+      pos <- state$pos
+      vH <- state$vH
+      vL <- state$vL
+      vU <- state$vU
+      stack <- stack[-length(stack)]
+    }
+  }
+  
+  # Convert segments into points for rendering
+  points <- do.call(rbind, lapply(segments, function(segment) {
+    rbind(segment$start, segment$end)
+  }))
+  
+  # Draw the lines
+  segments3d(points, color = "blue", lwd = 2)
+}
+
+rules <- list(
+  "F" = function(cmd) {
+    len <- cmd@val
+    list(
+      nParam("F", len * 0.9),
+      "+",
+      nParam("F", len * 0.9),
+      "-"
+    )
+  }
+)
+
+axiom <- list(
+  nParam("F", 1.0),
+  "+",
+  nParam("F", 0.5),
+  "-"
+)
+```
+
+# Rules/Axiom for ABOP
+```{r create Rules/Axiom}
+vr <- 1.732; lr <- 1.109; a <- 18.95; d2 <- 132.63; d1 <- 94.74
+rules2 <- list(
+  "A" = list(
+    nParam("!", vr), 
+    nParam("F", 50), 
+    "[", 
+    nParam("&", a), 
+    nParam("F", 50), 
+    "A", 
+    "]", 
+    nParam("/", d1), 
+    "[",
+    nParam("&", a), 
+    nParam("F", 50), 
+    "A", 
+    "]",
+    nParam("/",d2),
+    "[",
+    nParam("&", a), 
+    nParam("F", 50), 
+    "A", 
+    "]"
+  ), 
+  "F" = function(cmd) 
+    nParam("F", lr * cmd@val), 
+  "!" = function(cmd) 
+    nParam("!", vr * cmd@val)
+)
+
+axiom2 <- list(
+  nParam("!", 1), 
+  nParam("F", 200), 
+  nParam("/", 45), 
+  "A"
+)
+```
+
+# Final Function
+
+```{r Final Function}
+render_lsystem <- function(lsystem_result) {
+  library(rgl) # library for plotting
+  
+  vT <- c(0, 0, -1) # Tropism vector
+  e <- 0.22 # Strength of tropism
+  norm_vec <- function(x) sqrt(sum(x^2)) # normalize a vector
+  
+  # Establish turtle initial state: heading along z, left on x, up on y
+  pos <- c(0, 0, 0) # Initial position(at origin)
+  vH <- c(0, 0, 1) # Initial heading (unit vector along z-axis)
+  vL <- c(1, 0, 0) # Initial left (unit vector along x-axis)
+  vU <- c(0, 1, 0) # Initial up (unit vector along y-axis)
+
+  stack <- list()    # Stack for saving and restoring state
+  segments <- list() # Store segments to draw
+  line_width <- 1    # Default line width
+  
+  # Run through all the commands 
+  for (cmd in lsystem_result) {
+    if (is(cmd, "Param") && cmd@char == "F") { # Drawing forward
+      len <- cmd@val # extract length of segment
+      R_magnitude <- norm_vec(pracma::cross(vH, vT)) # Check if T and H in the same direction
+      if (R_magnitude > 0) { # If not the same, apply tropism
+        vR <- pracma::cross(vH, vT) / R_magnitude # Rotation vector
+        Tang <- e * norm_vec(pracma::cross(vH, vT)) # Calculate rotation angle
+        vH <- RotVecAxisAngle(vH, vR, Tang) # Rotate heading
+        vL <- RotVecAxisAngle(vL, vR, Tang) # Rotate left
+        vU <- RotVecAxisAngle(vU, vR, Tang) # Rotate up
+      }
+      
+      new_pos <- pos + vH * len # 
+      segments <- append(segments, list(list(start = pos, end = new_pos, width = line_width)))
+      pos <- new_pos
+      
+    } else if (is(cmd, "Param") && cmd@char == "/") {
+      # Rotate direction around the heading vector
+      vL <- RotVecAxisAngle(vL, vH, cmd@val * pi / 180)
+      vU <- RotVecAxisAngle(vU, vH, cmd@val * pi / 180)
+      
+    } else if (is(cmd, "Param") && cmd@char == "&") {
+      # Rotate direction around the left vector
+      vH <- RotVecAxisAngle(vH, vL, cmd@val * pi / 180)
+      vU <- RotVecAxisAngle(vU, vL, cmd@val * pi / 180)
+      
+    } else if (is(cmd, "Param") && cmd@char == "!") {
+      # Change line width
+      line_width <- cmd@val
+      
+    } else if (cmd == "[") {
+      # Save current state
+      stack <- append(stack, list(list(pos = pos, vH = vH, vL = vL, vU = vU, line_width = line_width)))
+      
+    } else if (cmd == "]") {
+      # Restore state
+      state <- stack[[length(stack)]]
+      pos <- state$pos
+      vH <- state$vH
+      vL <- state$vL
+      vU <- state$vU
+      line_width <- state$line_width
+      stack <- stack[-length(stack)]
+    }
+  }
+  
+  # Group segments by line width
+  width_groups <- split(segments, sapply(segments, function(segment) segment$width))
+  
+  # Render each group with its corresponding line width
+  for (width in names(width_groups)) {
+    group_segments <- width_groups[[width]]
+    points <- do.call(rbind, lapply(group_segments, function(segment) {
+      rbind(segment$start, segment$end)
+    }))
+    #points <- points[!is.na(points[, 1]), ]  # Remove NA rows for rendering
+    segments3d(points, color = "blue", lwd = as.numeric(width))
+  }
+}
+
+
+iterations <- 5
+lsystem_result <- generate_lsystem(axiom2, rules2, iterations)
+render_lsystem(lsystem_result)
+rglwidget()
+```
+
