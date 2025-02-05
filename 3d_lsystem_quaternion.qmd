@@ -3,7 +3,7 @@ title: "3d Lindenmayer Systems"
 subtitle: "Using Quaternion Rotation"
 format: 
   html: 
-    code-fold: true
+    code-fold: false
     #cache: true
 ---
 
@@ -12,7 +12,7 @@ format:
 library(rgl)
 #knitr::knit_hooks$set(webgl = hook_webgl)
 options(rgl.useNULL = FALSE) # Suppress the separate window.
-source("quaternion.R")
+#source("quaternion.R")
 ```
 
 ## 3D Lindenmayer Systems
@@ -35,8 +35,9 @@ A distilled version is that quaternions are an extension of the complex coordina
 ### Quaternions  
 A quaternion extends the complex coordinate plane to three dimensions by adding two additional imaginary components as $q=s+xi+yj+zk \quad s, x, y, z \in \mathbb{R}$. These additional imaginary components have the properties that:  
 
+$i^2 = j^2 = k^2 = ijk = -1$
+
 $$
-i^2 = j^2 = k^2 = ijk = -1\\
 \begin{aligned}
 ij&=k   &   jk&=i   &   ki&=j\\
 ji&=-k  &   kj&=-i  &   ik&=-j
@@ -70,53 +71,32 @@ setValidity("Quaternion", function(object) {
 })
 ```
 
-Testing this out: 
+Testing out the new class with a successful case: 
 
-```{r Test Quaternion Class}
-#| error: true
+```{r Test Quaternion Class successful}
 new("Quaternion", s=1, x=2, y=3, z=4)
+```
+
+And testing one expected to fail: 
+```{r test quaternion class failure}
+#| error: true
 new("Quaternion", s=c(0,1), x=2, y=3, z=4)
 ```
 
-```{r}
-setClass("Quaternion", 
-         slots = list(s = "numeric", x = "numeric", y = "numeric", z = "numeric"), 
-         prototype = list(s = 0, x = 1, y = 0, z = 0))
+### Creating Methods for Quaternion Class
+#### createQuaternion Function
+The first method for the quaternion class is a helper function so that repeated calls to `new()` do not have to be made. For this function, I wanted to have the ability to create a quaternion by passing `s, x, y, z` individually, or by passing a vector `c(x, y, z)`. The latter is useful when converting a vector to a pure quaternion.  
 
-# Check validity of a created quaternion
-setValidity("Quaternion", function(object) {
-  if(length(object@s) != 1 ||
-     length(object@x) != 1 || 
-     length(object@y) != 1 ||
-     length(object@z) != 1) {
-    "Each term of quaternion must be single numeric values"
-  } else {
-    TRUE
-  }
-})
-
-setClass("Param", 
-         slots = list(char = "character", val = "numeric"), 
-         prototype = list(char = NA_character_, val = NA_real_))
-
-nParam <- function(char, val) {
-  new("Param", char = char, val = val)
-}
-
-# Helper function to create a new quaternion
-## Superceeded by version below that accepts a vector.
-#createQuaternion <- function(s=0, x=1, y=0, z=0) {
-#  new("Quaternion", s = s, x = x, y = y, z =z)
-#}
-
+```{r function-createQuaternion}
+#| code-fold: true
 createQuaternion <- function(s = NULL, x = NULL, y = NULL, z = NULL, vec = NULL) {
-  if (!is.null(vec)) {
+  if (!is.null(vec)) {# check if vec is provided
     if (length(vec) != 3) {
       stop("The input vector 'vec' must have exactly three components to create a pure quaternion.")
     }
     # Create a pure quaternion (s = 0)
     new("Quaternion", s = 0, x = vec[1], y = vec[2], z = vec[3])
-  } else {
+  } else { # else check if s, x, y, z are provided
     if (is.null(s) || is.null(x) || is.null(y) || is.null(z)) {
       stop("All of 's', 'x', 'y', and 'z' must be specified when 'vec' is not provided.")
     }
@@ -124,21 +104,35 @@ createQuaternion <- function(s = NULL, x = NULL, y = NULL, z = NULL, vec = NULL)
     return(new("Quaternion", s = s, x = x, y = y, z = z))
   }
 }
+```
 
+Testing sample quaternion creation: 
+
+```{r testing-createQuaternion}
+q1 <- createQuaternion(vec = c(1, 2, 3)); q1
+q2 <- createQuaternion(s=4, x=5, y=6, z=7); q2
+```
+#### `show` Method
+The next is a quality of life method - how the quaternion is displayed. Using the class is made more convenient by having quaternions print in the form `[s,x,y,z]`. This is done by modifying `show` with `setMethod("show", "Quaternion")`. The final `function` argument tells `show` how to behave when called on an object of class `Quaternion`. For the quaternion class, it takes the `object` and using `sprintf`, it formats the output to be `Quaternion: [s, x, y, z]` where `s, x, y, z` are rounded to 4 decimal places.  
+
+```{r method-show}
 # Method: Print
 # 'show' method exists, no need to create generic first
 setMethod("show", "Quaternion", function(object) {
   cat(sprintf("Quaternion: [%.4f, %.4f, %.4f, %.4f]\n", object@s, object@x, object@y, object@z))
 })
+```
 
-# Method: normalize
-# No existing method 'normalize', create generic first
-setGeneric("normQuat", function(q) standardGeneric("normQuat"))
-setMethod("normQuat", "Quaternion", function(q) {
-  magnitude <- sqrt(q@s^2 + q@x^2 + q@y^2 + q@z^2)
-  createQuaternion(q@s / magnitude, q@x / magnitude, q@y / magnitude, q@z / magnitude)
-})
+And testing this method: 
 
+```{r test-show}
+q1
+```
+
+#### Quaternion Operations Methods
+Similarly to `show`, methods for addition, multiplication, and dot products already exist within R. To define custom behavior for these, the `signature` argument is required to instruct the existing method inputs of `e1` and `e2` how to interact with the quaternion class. 
+
+```{r}
 # Method: addition
 # Already exists, requires signature inputs e1 and e2
 setMethod("+", 
@@ -151,8 +145,9 @@ setMethod("+",
 # Already exists, requires signature inputs e1 and e2
 setMethod("*", 
           signature(e1 = "Quaternion", e2 = "Quaternion"), 
-          function(e1, e2) createQuaternion(e1@s*e2@s - e1@x*e2@x - e1@y*e2@y - e1@z*e2@z, 
-                                            e1@s*e2@x + e2@s*e1@x + e1@y*e2@z - e2@y*e1@z, 
+          function(e1, e2) 
+            createQuaternion(e1@s*e2@s - e1@x*e2@x - e1@y*e2@y - e1@z*e2@z, 
+                                           e1@s*e2@x + e2@s*e1@x + e1@y*e2@z - e2@y*e1@z, 
                                             e1@s*e2@y + e2@s*e1@y + e1@z*e2@x - e2@z*e1@x, 
                                             e1@s*e2@z + e2@s*e1@z + e1@x*e2@y - e2@x*e1@y))
 
@@ -161,6 +156,26 @@ setMethod("*",
 setMethod("%*%", 
           signature(x = "Quaternion", y = "Quaternion"),
           function(x, y) x@s*y@s + x@x*y@x + x@y*y@y + x@z*y@z)
+```
+
+
+```{r}
+setClass("Param", 
+         slots = list(char = "character", val = "numeric"), 
+         prototype = list(char = NA_character_, val = NA_real_))
+
+nParam <- function(char, val) {
+  new("Param", char = char, val = val)
+}
+
+
+# Method: normalize
+# No existing method 'normalize', create generic first
+setGeneric("normQuat", function(q) standardGeneric("normQuat"))
+setMethod("normQuat", "Quaternion", function(q) {
+  magnitude <- sqrt(q@s^2 + q@x^2 + q@y^2 + q@z^2)
+  createQuaternion(q@s / magnitude, q@x / magnitude, q@y / magnitude, q@z / magnitude)
+})
 
 ## Method: create normalized rotation quaternion
 setGeneric("NormRtnQuat", function(axis, angle) standardGeneric("NormRtnQuat"))
@@ -265,93 +280,6 @@ generate_lsystem <- function(axiom, rules, iterations) {
   result
 }
 
-
-## This code provided by ChatGPT may not work as desired. I need to make sure that appropriate HLU vectors are maintained throughout. 
-render_lsystem <- function(lsystem_result) {
-  library(rgl)
-  vT <- c(0,0,-1)
-  e <- .22
-  norm_vec <- function(x) sqrt(sum(x^2))
-  # Establish turtle initial state: heading along z, left on x, up on y
-  pos <- c(0, 0, 0)
-  vH <- c(0, 0, 1) # Initial heading (unit vector along z-axis)
-  vL <- c(1, 0, 0) # Initial left (unit vector along x-axis)
-  vU <- c(0, 1, 0) # Initial up (unit vector along y-axis)
-
-  stack <- list()   # Stack for saving and restoring state
-  segments <- list() # Store segments to draw
-  
-  for (cmd in lsystem_result) {
-    # Handles drawing forward
-    if (is(cmd, "Param") && cmd@char == "F") {
-      len <- cmd@val
-      R_magnitude <- norm_vec(pracma::cross(vH,vT)) # check if T and H in same direction
-      if (R_magnitude > 0) { # If not in same, apply tropism
-        vR <- pracma::cross(vH, vT)/R_magnitude
-        Tang <- e*norm_vec(pracma::cross(vH, vT))
-        vH <- RotVecAxisAngle(vH, vR, Tang)
-        vL <- RotVecAxisAngle(vL, vR, Tang)
-        vU <- RotVecAxisAngle(vU, vR, Tang)}
-      
-      new_pos <- pos + vH * len 
-      segments <- append(segments, list(list(start = pos, end = new_pos)))
-      pos <- new_pos
-      
-    } else if (is(cmd, "Param") && cmd@char == "/") {
-      # Rotate direction around the heading vector
-      vL <- RotVecAxisAngle(vL, vH, cmd@val*pi/180)
-      vU <- RotVecAxisAngle(vU, vH, cmd@val*pi/180)
-      
-    } else if (is(cmd, "Param") && cmd@char == "&") {
-      # Rotate direction around the left vector
-      vH <- RotVecAxisAngle(vH, vL, cmd@val*pi/180)
-      vU <- RotVecAxisAngle(vU, vL, cmd@val*pi/180)
-      
-    } else if (is(cmd, "Param") && cmd@char == "!") {
-      # change line width
-      
-    } else if (cmd == "[") {
-      # Save current state
-      stack <- append(stack, list(list(pos = pos, vH = vH, vL = vL, vU = vU)))
-      
-    } else if (cmd == "]") {
-      # Restore state
-      state <- stack[[length(stack)]]
-      pos <- state$pos
-      vH <- state$vH
-      vL <- state$vL
-      vU <- state$vU
-      stack <- stack[-length(stack)]
-    }
-  }
-  
-  # Convert segments into points for rendering
-  points <- do.call(rbind, lapply(segments, function(segment) {
-    rbind(segment$start, segment$end)
-  }))
-  
-  # Draw the lines
-  segments3d(points, color = "blue", lwd = 2)
-}
-
-rules <- list(
-  "F" = function(cmd) {
-    len <- cmd@val
-    list(
-      nParam("F", len * 0.9),
-      "+",
-      nParam("F", len * 0.9),
-      "-"
-    )
-  }
-)
-
-axiom <- list(
-  nParam("F", 1.0),
-  "+",
-  nParam("F", 0.5),
-  "-"
-)
 ```
 
 # Rules/Axiom for ABOP
