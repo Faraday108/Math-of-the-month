@@ -1,0 +1,64 @@
+---
+title: "Fundamental Theorem of Calculus"
+format: html
+---
+
+Note, the following proof is borrowed from "Calculus of a Single Variable - AP Edition, 10e" by Larson an Edwards.
+
+## Proof
+
+The key to the proof is writing the difference $F(b)-F(a)$ in a convenient form. Let $\Delta$ be any partition of $[a,b]$.
+
+$$
+a=x_0<x_1<x_2<\dots<x_{n-1}<x_n=b
+$${#eq-e1}
+
+::: callout-note
+This says that $a=x_0, b=x^n$ and $x_1, x_2, \dots$ are in between $a$ and $b$
+:::
+
+By pairwise subtraction and addition of like terms you can write:
+
+$$
+\begin{aligned}
+F(b)-F(a)&=F(x_n)-F(x_{n-1})+F(x_{n-1})-\dots-F(x_1)+F(x_1)-F(x_0)\\
+&=\sum^n_{i=1}[F(x_i)-F(x_{i-1})]
+\end{aligned}
+$${#eq-e2}
+
+::: callout-note
+This says that we are rewriting the original statement. $F(b)$ becomes $F(x_n)$, $F(a)$ becomes $F(x_0)$, and inner terms are added pairwise as $F(x_{n-1})-F(x_{n-1})$ (which is 0) so we haven't changed the original statement.
+:::
+
+By the Mean Value Theorem, you know there exists a number $c_i$ in the $i$th subinterval such that
+
+$$
+F'(c_i)=\frac{F(x_i)-F(x_{i-1})}{x_i-x_{i-1}}
+$${#eq-e3}
+
+Because $F'(c_i)=f(c_i)$, you can let $\Delta x_i=x_i-x_{i-1}$ and rewrite @eq-e2 to obtain:
+
+$$
+\begin{aligned}
+F(b)-F(a)&=\sum^n_{i=1}[F(x_i)-F(x_{i-1})]\\
+&=\sum^n_{i=1}\left[\frac{F(x_i)-F(x_{i-1})}{x_i-x_{i-1}}
+\cdot(x_i-x_{i-1})\right]\\
+&=\sum^n_{i=1} f(c_i)\Delta x_i\\
+\end{aligned}
+$$ {#eq-e4}
+
+::: callout-note
+This says that we are rewriting @eq-e2 using the MVT @eq-e3 to get to the familiar representation of a Riemann sum.
+:::
+
+This important equation tells you that by repeatedly applying the Mean Value Theorem, you can always find a collection of $c_i$'s such that the *constant* $F(b)-F(a)$ is a Riemann sum of $f$ on $[a,b]$ for any partition. So by the definition of a definite integral from Riemann sums:
+
+$$
+\lim_{\Delta x \rightarrow 0}\sum^n_{i=1} f(c_i)\Delta x_i=\int_a^b f(x)dx
+$${#eq-e5}
+
+Thus:
+
+$$
+\boxed{F(b)-F(a)=\int_a^b f(x)dx}
+$${#eq-e6}
