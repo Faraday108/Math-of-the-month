@@ -1,0 +1,139 @@
+---
+title: "Log Property Derivation"
+format: html
+---
+
+<!--
+NOTE TO INSTRUCTORS/EDITORS:
+
+This document renders correctly in both HTML and PDF formats by using conditional content blocks.
+- In PDF: equation numbers and references use \label{} and \eqref{}.
+- In HTML: manual tags (\tag{}) are used since \eqref{} does not work reliably.
+- The blocks are separated using ::: {.content-visible when-format="html"} and when-format="pdf".
+
+These differences ensure that students see consistent, clear equations regardless of output format.
+-->
+
+
+::: {.content-visible when-format="pdf"}
+
+Let:
+
+\begin{align}
+M &= a^m \label{eq:M-def} \\
+N &= a^n \label{eq:N-def}
+\end{align}
+
+Then solving both for the exponent:
+
+\begin{align}
+m &= \log_a{M} \label{eq:m-def} \\
+n &= \log_a{N} \label{eq:n-def}
+\end{align}
+
+## Product Property
+
+\begin{align}
+\log_a{(M \cdot N)} &= \log_a{a^m \cdot a^n} \label{eq:prod-expand} \\
+&= \log_a{a^{m+n}} \label{eq:prod-combine-exp} \\
+&= m + n \label{eq:prod-cancel-log} \\
+\log_a{(M \cdot N)} &= \log_a{M} + \log_a{N} \label{eq:prod-final}
+\end{align}
+
+* \eqref{eq:prod-expand} uses \eqref{eq:M-def} and \eqref{eq:N-def}.  
+* \eqref{eq:prod-cancel-log} uses \eqref{eq:m-def} and \eqref{eq:n-def} to get \eqref{eq:prod-final}.  
+* The result in \eqref{eq:prod-final} shows the **Product Property of Logarithms**.
+
+---
+
+## Quotient Property
+
+\begin{align}
+\log_a{\left(\frac{M}{N}\right)} &= \log_a{\left(\frac{a^m}{a^n}\right)} \label{eq:quot-expand} \\
+&= \log_a{a^{m-n}} \label{eq:quot-combine-exp} \\
+&= m - n \label{eq:quot-cancel-log} \\
+\log_a{\left(\frac{M}{N}\right)} &= \log_a{M} - \log_a{N} \label{eq:quot-final}
+\end{align}
+
+* \eqref{eq:quot-expand} uses \eqref{eq:M-def} and \eqref{eq:N-def}.  
+* \eqref{eq:quot-cancel-log} uses \eqref{eq:m-def} and \eqref{eq:n-def} to get \eqref{eq:quot-final}.  
+* The result in \eqref{eq:quot-final} shows the **Quotient Property of Logarithms**.
+
+---
+
+## Power Property
+
+\begin{align}
+\log_a{(M^n)} &= \log_a{(a^m)^n} \label{eq:power-expand} \\
+&= \log_a{a^{mn}} \label{eq:power-combine-exp} \\
+&= m \cdot n \label{eq:power-cancel-log} \\
+\log_a{(M^n)} &= n \cdot \log_a{M} \label{eq:power-final}
+\end{align}
+
+* \eqref{eq:power-expand} uses \eqref{eq:M-def}.  
+* \eqref{eq:power-cancel-log} uses \eqref{eq:m-def} to get \eqref{eq:power-final}.  
+* The result in \eqref{eq:power-final} shows the **Power Property of Logarithms**.
+
+:::
+
+::: {.content-visible when-format="html"}
+
+Let:
+
+\begin{align}
+M &= a^m \tag{1}\label{eq:M-def} \\
+N &= a^n \tag{2}\label{eq:N-def}
+\end{align}
+
+Then solving both for the exponent:
+
+\begin{align}
+m &= \log_a{M} \tag{3}\label{eq:m-def} \\
+n &= \log_a{N} \tag{4}\label{eq:n-def}
+\end{align}
+
+## Product Property
+
+\begin{align}
+\log_a{(M \cdot N)} &= \log_a{a^m \cdot a^n} \tag{5}\label{eq:prod-expand} \\
+&= \log_a{a^{m+n}} \tag{6}\label{eq:prod-combine-exp} \\
+&= m + n \tag{7}\label{eq:prod-cancel-log} \\
+\log_a{(M \cdot N)} &= \log_a{M} + \log_a{N} \tag{8}\label{eq:prod-final}
+\end{align}
+
+* \eqref{eq:prod-expand} uses \eqref{eq:M-def} and \eqref{eq:N-def}.  
+* \eqref{eq:prod-cancel-log} uses \eqref{eq:m-def} and \eqref{eq:n-def} to get \eqref{eq:prod-final}.  
+* The result in \eqref{eq:prod-final} shows the **Product Property of Logarithms**.
+
+---
+
+## Quotient Property
+
+\begin{align}
+\log_a{\left(\frac{M}{N}\right)} &= \log_a{\left(\frac{a^m}{a^n}\right)} \tag{9}\label{eq:quot-expand} \\
+&= \log_a{a^{m-n}} \tag{10}\label{eq:quot-combine-exp} \\
+&= m - n \tag{11}\label{eq:quot-cancel-log} \\
+\log_a{\left(\frac{M}{N}\right)} &= \log_a{M} - \log_a{N} \tag{12}\label{eq:quot-final}
+\end{align}
+
+* \eqref{eq:quot-expand} uses \eqref{eq:M-def} and \eqref{eq:N-def}.  
+* \eqref{eq:quot-cancel-log} uses \eqref{eq:m-def} and \eqref{eq:n-def} to get \eqref{eq:quot-final}.  
+* The result in \eqref{eq:quot-final} shows the **Quotient Property of Logarithms**.
+
+---
+
+## Power Property
+
+\begin{align}
+\log_a{(M^n)} &= \log_a{(a^m)^n} \tag{13}\label{eq:power-expand} \\
+&= \log_a{a^{mn}} \tag{14}\label{eq:power-combine-exp} \\
+&= m \cdot n \tag{15}\label{eq:power-cancel-log} \\
+\log_a{(M^n)} &= n \cdot \log_a{M} \tag{16}\label{eq:power-final}
+\end{align}
+
+* \eqref{eq:power-expand} uses \eqref{eq:M-def}.  
+* \eqref{eq:power-cancel-log} uses \eqref{eq:m-def} to get \eqref{eq:power-final}.  
+* The result in \eqref{eq:power-final} shows the **Power Property of Logarithms**.
+
+:::
+
