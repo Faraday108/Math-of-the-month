@@ -1,3 +1,5 @@
+library(tidyverse)
+library(rgl)
 
 ####### CREATE BASE UNIT HEXAGON POINTS ##############
 # points per side
@@ -108,6 +110,7 @@ hex_grid_populate <- function(hex_grid, scale = 1) {
 }
 
 # Function to help apply the make_hex function to each point of the grid
+# If scale is less than 1, will add extra points to fill in blank space between hexagons
 hex_grid_populate2 <- function(hex_grid, scale = 1) {
   output <- data.frame(x = numeric(), y = numeric())
   if(scale < 1) {
@@ -173,11 +176,30 @@ full_hex_generator2 <- function(n = 1, size = 1, scale = 1, include_grid = TRUE)
     hex_grid_projection(include_grid) 
 }
 
-open3d(silent = TRUE);plot3d(full_hex_generator(n = 4, scale = .4, include_grid = FALSE))
-plot3d(full_hex_generator2(n = 2, scale = .5, include_grid = FALSE))
+# The following creates a grid with n generations of hexagons from center. 
+# open3d(silent = TRUE);plot3d(full_hex_generator(n = 4, scale = .4, include_grid = FALSE))
+# plot3d(full_hex_generator2(n = 2, scale = .5, include_grid = FALSE))
 
 pts <- full_hex_generator2(n = 4, scale = .8, size = .8, include_grid = FALSE)
 
-write.table(100*pts, "hexprojection.xyz",
-            col.names = FALSE, 
-            row.names = FALSE)
+# The current generation has too many points where hexagons meet, to reduce these
+# the following function will remove points that are too close. 
+remove_near_duplicates <- function(points, threshold = 1e-3) {
+  points <- as.matrix(points)  # ensure numeric matrix
+  keep <- rep(TRUE, nrow(points))
+  for (i in 1:(nrow(points)-1)) {
+    if (!keep[i]) next
+    remaining <- points[(i+1):nrow(points), , drop = FALSE]
+    current <- matrix(points[i, ], nrow = nrow(remaining), ncol = 3, byrow = TRUE)
+    dists <- sqrt(rowSums((remaining - current)^2))
+    keep[(i+1):nrow(points)] <- keep[(i+1):nrow(points)] & dists > threshold
+  }
+  points[keep, ]
+}
+
+
+pts2 <- dist(pts)
+
+# write.table(100*pts, "hexprojection.xyz",
+#             col.names = FALSE, 
+#             row.names = FALSE)
